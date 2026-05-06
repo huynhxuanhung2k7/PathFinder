@@ -1,6 +1,12 @@
 # Compiled output
 pathfinder
+pathfinder_gl
 src/*.o
+*.o
+
+# Spike / scratch files
+test_stl.cpp
+test_ncurses.cpp
 
 # OS files
 .DS_Store
