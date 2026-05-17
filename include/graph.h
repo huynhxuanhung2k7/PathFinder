@@ -46,7 +46,7 @@ class GridGraph {
     const Node* get_node(int x, int y) const;
 
     //Change a tile's type and update its cost field to match.
-    void set_title(int x, int y, TileType type);
+    void set_tile(int x, int y, TileType type);
 
     //Returns up to 4 passable neighbors 
     // Primary navigation for 4 algorithms
