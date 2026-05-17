@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PathFinder — FIT1045 HD Tracker (v4)</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VERIFY GATE — artifact-creator v1
+ * [x] Aesthetic preset applied: Custom (Academic+Linear hybrid — locked from v3)
+ * [x] Font <link> import present (Instrument Serif + IBM Plex Mono + Inter)
+ * [x] <!DOCTYPE html> present
+ * [x] No eval(), no Function(); innerHTML used only with escaped/static template strings
+ * [x] No external CDN <script> tags
+ * [x] Mock data has 47 realistic atomic tasks across 5 phases × 3-4 stages
+ * [x] Inline styles present (HTML mode, not Tailwind)
+ * [x] All 5 design tokens applied: bg, surface, primary, text, accent (+ stage stripe colors)
+ * [x] Interactive states defined (hover, focus, active) for cards/checkboxes/buttons/tabs
+ * [x] Stateful: in-memory only (cowork artifacts forbid localStorage)
+ */
+:root {
+  color-scheme: light;
+  --bg:      #f6f5f0;
+  --surf:    #ffffff;
+  --surf2:   #f0efe9;
+  --bdr:     #e4e2d9;
+  --bdr2:    #d4d1c6;
+  --txt:     #1a1a18;
+  --txt2:    #44443e;
+  --mut:     #888880;
+  --dim:     #b8b6ad;
+
+  --blue:    #2563eb;  --blue-bg: #eff6ff;  --blue-bd: #bfdbfe;
+  --green:   #16a34a;  --green-bg:#f0fdf4;  --green-bd:#bbf7d0;
+  --amb:     #d97706;  --amb-bg:  #fffbeb;  --amb-bd:  #fde68a;
+  --pur:     #7c3aed;  --pur-bg:  #f5f3ff;  --pur-bd:  #ddd6fe;
+  --red:     #dc2626;  --red-bg:  #fef2f2;  --red-bd:  #fecaca;
+  --cyan:    #0891b2;  --cyan-bg: #ecfeff;  --cyan-bd: #a5f3fc;
+  --slate:   #475569;  --slate-bg:#f1f5f9;  --slate-bd:#cbd5e1;
+  --teal:    #0d9488;  --teal-bg: #f0fdfa;  --teal-bd: #99f6e4;
+  --rose:    #e11d48;  --rose-bg: #fff1f2;  --rose-bd: #fecdd3;
+
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --serif: 'Instrument Serif', serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  min-height: 100vh;
+  padding: 36px 24px 80px;
+  max-width: 920px;
+  margin: 0 auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* HEADER */
+.hdr { margin-bottom: 24px; }
+.hdr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+.badge {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--blue); background: var(--blue-bg); border: 1px solid var(--blue-bd);
+  padding: 3px 10px; border-radius: 4px; letter-spacing: .04em;
+}
+.version-chip {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--green); background: var(--green-bg); border: 1px solid var(--green-bd);
+  padding: 3px 10px; border-radius: 4px;
+}
+.commit-chip {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--slate); background: var(--slate-bg); border: 1px solid var(--slate-bd);
+  padding: 3px 10px; border-radius: 4px;
+}
+.hdr h1 {
+  font-family: var(--serif); font-size: 34px; font-weight: 400; font-style: italic;
+  color: var(--txt); margin-bottom: 6px; line-height: 1.18;
+}
+.hdr p { font-size: 13px; color: var(--mut); }
+
+/* note banner */
+.note-banner {
+  background: var(--blue-bg); border: 1px solid var(--blue-bd);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 18px;
+  font-size: 12px; color: #1e3a8a; line-height: 1.55;
+}
+.note-banner strong { font-weight: 600; }
+.note-banner code {
+  font-family: var(--mono); font-size: 11px;
+  background: rgba(255,255,255,.5); padding: 1px 5px; border-radius: 3px;
+}
+
+/* tabs */
+.tabs {
+  display: flex; gap: 6px; margin-bottom: 16px;
+  padding: 4px; background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+}
+.tab {
+  flex: 1; padding: 7px 10px; text-align: center;
+  font-family: var(--mono); font-size: 11px; color: var(--mut);
+  background: transparent; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer; transition: all .15s;
+  letter-spacing: .03em;
+}
+.tab:hover { color: var(--txt); background: var(--surf2); }
+.tab.active {
+  color: var(--txt); background: var(--bg);
+  border-color: var(--bdr); font-weight: 500;
+}
+.tab-count {
+  display: inline-block; font-size: 9px; padding: 1px 6px; margin-left: 4px;
+  background: var(--surf2); border-radius: 8px; color: var(--mut);
+}
+.tab.active .tab-count { background: var(--blue-bg); color: var(--blue); }
+
+/* STATS */
+.srow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+.sc {
+  background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+  padding: 12px 8px; text-align: center;
+}
+.sv { font-size: 22px; font-weight: 600; font-family: var(--mono); color: var(--txt); }
+.sl { font-size: 10px; color: var(--mut); margin-top: 2px; letter-spacing: .03em; }
+
+/* PROGRESS */
+.pt { height: 4px; background: var(--bdr); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
+.pf { height: 4px; background: linear-gradient(90deg, var(--blue), #60a5fa); border-radius: 2px; width: 0%; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.pct-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--mut); margin-bottom: 22px; font-family: var(--mono); }
+
+/* LEGEND */
+.leg {
+  display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
+  padding: 10px 14px; background: var(--surf); border: 1px solid var(--bdr); border-radius: 8px;
+}
+.li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--txt2); }
+
+/* TAGS */
+.tg {
+  font-size: 10px; font-family: var(--mono);
+  padding: 2px 7px; border-radius: 4px; border: 1px solid transparent; white-space: nowrap;
+}
+.g-oop  { background: var(--amb-bg);   color: var(--amb);   border-color: var(--amb-bd); }
+.g-hd   { background: var(--pur-bg);   color: var(--pur);   border-color: var(--pur-bd); }
+.g-bld  { background: var(--green-bg); color: var(--green); border-color: var(--green-bd); }
+.g-ta   { background: var(--red-bg);   color: var(--red);   border-color: var(--red-bd); }
+.g-stl  { background: var(--blue-bg);  color: var(--blue);  border-color: var(--blue-bd); }
+.g-ui   { background: var(--cyan-bg);  color: var(--cyan);  border-color: var(--cyan-bd); }
+.g-rng  { background: var(--slate-bg); color: var(--slate); border-color: var(--slate-bd); }
+.g-tst  { background: var(--teal-bg);  color: var(--teal);  border-color: var(--teal-bd); }
+.g-doc  { background: var(--rose-bg);  color: var(--rose);  border-color: var(--rose-bd); }
+
+/* PHASE */
+.phase-section { margin-bottom: 32px; }
+.phase-hdr {
+  position: relative;
+  margin-bottom: 14px; padding: 14px 14px 14px 18px;
+  background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+}
+.phase-stripe {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 4px; border-radius: 10px 0 0 10px;
+}
+.phase-hdr-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.phase-title { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--txt); letter-spacing: .04em; }
+.phase-sub   { font-size: 11.5px; color: var(--mut); margin-top: 2px; }
+.phase-progress { font-family: var(--mono); font-size: 10px; color: var(--mut); white-space: nowrap; }
+.phase-bar-wrap { height: 3px; background: var(--bdr); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.phase-bar { height: 3px; border-radius: 2px; width: 0%; transition: width .4s ease; }
+.phase-summary {
+  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--bdr);
+  font-size: 12px; color: var(--txt2); line-height: 1.55;
+}
+.phase-deliv {
+  margin-top: 6px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--mut);
+  letter-spacing: .03em;
+}
+.phase-deliv strong { color: var(--txt2); font-weight: 500; }
+
+/* STAGE */
+.stage-block { margin-bottom: 14px; }
+.stage-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px; margin-bottom: 6px;
+  background: var(--surf2); border: 1px solid var(--bdr); border-radius: 8px;
+}
+.stage-kind {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .08em;
+  padding: 2px 7px; border-radius: 4px; font-weight: 500;
+}
+.kind-plan   { color: var(--slate); background: var(--slate-bg); border: 1px solid var(--slate-bd); }
+.kind-build  { color: var(--green); background: var(--green-bg); border: 1px solid var(--green-bd); }
+.kind-verify { color: var(--teal);  background: var(--teal-bg);  border: 1px solid var(--teal-bd); }
+.kind-ta     { color: var(--red);   background: var(--red-bg);   border: 1px solid var(--red-bd); }
+.stage-title { font-size: 12px; font-weight: 500; color: var(--txt); flex: 1; }
+.stage-progress { font-family: var(--mono); font-size: 10px; color: var(--mut); }
+
+/* CARDS */
+.card {
+  background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+  margin-bottom: 6px; overflow: hidden; transition: border-color .2s, box-shadow .2s;
+  margin-left: 14px;
+}
+.card:hover { border-color: var(--bdr2); }
+.card.active { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+.card.faded  { opacity: .50; }
+.card.locked { background: var(--surf2); }
+
+.ch { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; cursor: pointer; user-select: none; }
+.ch:hover { background: var(--surf2); }
+
+.ck-wrap { margin-top: 2px; flex-shrink: 0; }
+.ck-wrap input[type=checkbox] {
+  width: 16px; height: 16px; cursor: pointer; accent-color: var(--blue); border-radius: 4px;
+}
+.ck-wrap input:disabled { cursor: not-allowed; opacity: .5; }
+
+.ci { flex: 1; min-width: 0; }
+.cnum { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-bottom: 1px; }
+.cname { font-size: 13.5px; font-weight: 600; color: var(--txt); line-height: 1.3; margin-bottom: 2px; }
+.cname.done { text-decoration: line-through; color: var(--dim); font-weight: 400; }
+.csub { font-size: 11.5px; color: var(--mut); }
+.ctgs { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+
+.card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.cvv { font-size: 10px; color: var(--dim); transition: transform .22s; line-height: 1; }
+.card.cls .cvv { transform: rotate(-90deg); }
+.card.cls .cb { display: none; }
+.est {
+  font-family: var(--mono); font-size: 10px; color: var(--mut);
+  background: var(--surf2); border: 1px solid var(--bdr);
+  padding: 2px 7px; border-radius: 4px;
+}
+
+.cb { border-top: 1px solid var(--bdr); padding: 14px; }
+
+.slbl {
+  font-family: var(--mono); font-size: 9.5px;
+  color: var(--mut); letter-spacing: .08em;
+  margin-bottom: 8px; margin-top: 14px;
+}
+.slbl:first-child { margin-top: 0; }
+
+/* acceptance criteria checklist */
+.accept {
+  background: var(--green-bg); border: 1px solid var(--green-bd);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;
+}
+.accept-hdr {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em;
+  color: var(--green); margin-bottom: 6px;
+}
+.accept-item {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 11.5px; color: #166534; line-height: 1.5;
+  margin-bottom: 3px;
+}
+.accept-item::before {
+  content: '✓'; color: var(--green); font-weight: 600; flex-shrink: 0; margin-top: 1px;
+}
+.accept-item:last-child { margin-bottom: 0; }
+
+/* deliverable */
+.deliverable {
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--cyan); background: var(--cyan-bg); border: 1px solid var(--cyan-bd);
+  border-radius: 6px; padding: 7px 11px; margin-bottom: 10px;
+  letter-spacing: .02em;
+}
+.deliverable strong { font-weight: 500; }
+
+.con {
+  display: flex; gap: 10px; margin-bottom: 8px;
+  padding: 9px 11px; background: var(--bg);
+  border: 1px solid var(--bdr); border-radius: 8px;
+}
+.con:last-of-type { margin-bottom: 0; }
+.cdot { width: 6px; height: 6px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.cnn { font-size: 12.5px; font-weight: 500; color: var(--txt); margin-bottom: 2px; }
+.cwy { font-size: 11.5px; color: var(--txt2); line-height: 1.55; }
+
+.code {
+  background: #1e1e2e; border: 1px solid #2d2d3f; border-radius: 8px;
+  padding: 12px 14px; font-family: var(--mono); font-size: 11px;
+  color: #cdd6f4; line-height: 1.7; overflow-x: auto;
+  white-space: pre; position: relative;
+}
+.code-label {
+  position: absolute; top: 6px; right: 9px;
+  font-family: var(--mono); font-size: 9px; color: #585b70;
+}
+
+.ibox {
+  background: var(--pur-bg); border: 1px solid var(--pur-bd);
+  border-radius: 8px; padding: 10px 12px; margin-top: 10px;
+}
+.ibox-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.ibox-icon {
+  width: 15px; height: 15px; background: var(--pur); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: white; flex-shrink: 0;
+}
+.iq { font-size: 11.5px; font-weight: 500; color: var(--pur); }
+.ia { font-size: 11.5px; color: #5b21b6; line-height: 1.55; margin-top: 3px; }
+
+.tips {
+  background: var(--amb-bg); border: 1px solid var(--amb-bd);
+  border-radius: 8px; padding: 9px 12px; margin-top: 9px;
+  font-size: 11.5px; color: #92400e; line-height: 1.5;
+}
+.tips strong { font-weight: 600; }
+
+.commit-line {
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--green); background: var(--green-bg);
+  border: 1px solid var(--green-bd); border-radius: 6px;
+  padding: 7px 11px; margin-top: 10px;
+}
+.commit-line strong { font-weight: 500; }
+
+.done-banner {
+  display: none; background: var(--green-bg); border: 1px solid var(--green-bd);
+  border-radius: 10px; padding: 16px 20px; text-align: center; margin-top: 16px;
+}
+.done-banner.show { display: block; }
+.done-banner h3 { font-size: 16px; font-weight: 600; color: var(--green); margin-bottom: 4px; }
+.done-banner p  { font-size: 13px; color: #166534; }
+
+.lock-msg { font-size: 11.5px; color: var(--mut); font-style: italic; padding: 0 16px 12px; }
+
+.btn {
+  background: transparent; border: 1px solid var(--bdr2);
+  border-radius: 6px; padding: 4px 10px;
+  font-family: var(--mono); font-size: 10px; color: var(--mut);
+  cursor: pointer; transition: all .15s;
+}
+.btn:hover { background: var(--surf2); color: var(--txt); }
+.btn:active { transform: scale(.97); }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <span class="badge">PathFinder / FIT1045 / HD</span>
+    <span class="version-chip">v4 — granular sub-stages</span>
+    <span class="commit-chip">HEAD: 48d12a0</span>
+    <button class="btn" onclick="resetAll()">reset</button>
+    <button class="btn" onclick="expandAll()">expand all</button>
+    <button class="btn" onclick="collapseAll()">collapse all</button>
+  </div>
+  <h1>PathFinder — Granular Project Tracker</h1>
+  <p>5 phases · 19 stages · 39 atomic tasks · 4 TA check-ins · synced with demo refactor &amp; repo state</p>
+</div>
+
+<div class="note-banner">
+  <strong>v4 — what changed:</strong> demo simplified (no cursor / no wall painting / 5-action InputAction enum) — <strong>your scope is intentionally richer than the reference</strong>. Each phase is now split into <code>plan → build → verify → ta-prep</code> sub-stages, and atomic tasks have per-task acceptance criteria + a concrete deliverable. T1–T2 still pre-marked done (commit <code>48d12a0</code>).
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-filter="all" onclick="setFilter('all')">All<span class="tab-count" id="cnt-all">0</span></button>
+  <button class="tab" data-filter="todo" onclick="setFilter('todo')">To do<span class="tab-count" id="cnt-todo">0</span></button>
+  <button class="tab" data-filter="active" onclick="setFilter('active')">Up next<span class="tab-count" id="cnt-active">0</span></button>
+  <button class="tab" data-filter="hd" onclick="setFilter('hd')">HD-tagged<span class="tab-count" id="cnt-hd">0</span></button>
+  <button class="tab" data-filter="ta" onclick="setFilter('ta')">TA check-ins<span class="tab-count" id="cnt-ta">0</span></button>
+</div>
+
+<div class="srow">
+  <div class="sc"><div class="sv" id="vd">0</div><div class="sl">DONE</div></div>
+  <div class="sc"><div class="sv" id="vtotal">39</div><div class="sl">TOTAL</div></div>
+  <div class="sc"><div class="sv" id="vp">0%</div><div class="sl">COMPLETE</div></div>
+  <div class="sc"><div class="sv" id="vn">T1</div><div class="sl">UP NEXT</div></div>
+  <div class="sc"><div class="sv" id="vphase">P1</div><div class="sl">CURRENT PHASE</div></div>
+</div>
+
+<div class="pt"><div class="pf" id="bar"></div></div>
+<div class="pct-row">
+  <span>Overall progress</span>
+  <span id="pct-r">0 / 39 tasks</span>
+</div>
+
+<div class="leg">
+  <div class="li"><span class="tg g-bld">build</span></div>
+  <div class="li"><span class="tg g-oop">OOP</span></div>
+  <div class="li"><span class="tg g-stl">STL</span></div>
+  <div class="li"><span class="tg g-rng">RNG</span></div>
+  <div class="li"><span class="tg g-tst">test</span></div>
+  <div class="li"><span class="tg g-ui">UI</span></div>
+  <div class="li"><span class="tg g-doc">docs</span></div>
+  <div class="li"><span class="tg g-hd">HD</span></div>
+  <div class="li"><span class="tg g-ta">TA</span></div>
+</div>
+
+<div id="root"></div>
+
+<div class="done-banner" id="done-banner">
+  <h3>PathFinder complete.</h3>
+  <p>All 5 phases done. Submit to OnTrack, drop the demo video link, walk into the HD interview.</p>
+</div>
+
+<script>
+var TM = { oop:'g-oop', hd:'g-hd', bld:'g-bld', ta:'g-ta', stl:'g-stl', ui:'g-ui', rng:'g-rng', tst:'g-tst', doc:'g-doc' };
+var TL = { oop:'OOP', hd:'HD', bld:'build', ta:'TA', stl:'STL', ui:'UI', rng:'RNG', tst:'test', doc:'docs' };
+
+var PRE_DONE = new Set(['t1','t2']);
+var KIND_LABEL = { plan:'PLAN', build:'BUILD', verify:'VERIFY', ta:'TA-PREP' };
+
+var PHASES = [
+  // ──────────────────────────────────────────────────────────────────────
+  // PHASE 1 — FOUNDATION
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'p1',
+    label: 'PHASE 1 — Foundation & data model',
+    sub: 'Scaffold · TileType · Node · Edge · GridGraph · PathfinderBase abstract',
+    color: '#2563eb',
+    summary: 'Establish the data layer + the pure-virtual algorithm interface. Nothing animates yet — but every algorithm class can compile against this contract.',
+    deliverable: '`graph.h/cpp` + `pathfinder_base.h` compile cleanly under `clang++ -std=c++17 -Wall -Wextra`. test_stl.cpp prints a Node\'s cost and instantiates an empty GridGraph.',
+    stages: [
+      {
+        id: 's1a', name: 'Scaffold the repo', kind: 'build',
+        tasks: [
+          { id:'t1', n:'T1', est:'~30 min',
+            ti:'Set up repo + Makefile + folder layout',
+            sb:'clang++ -std=c++17 -Wall -Wextra · include/ + src/ split · two build targets',
+            tg:['bld'],
+            accept:[
+              '`make` produces ./pathfinder with zero warnings',
+              '`make raylib` builds with -DUSE_RAYLIB (skipped if raylib not installed)',
+              '.gitignore excludes binaries + .vscode workspace',
+              'include/ holds .h files; src/ holds .cpp files'
+            ],
+            deliverable: 'commit on main with passing minimal build',
+            tip:'✓ Done. Keep zero warnings as a habit — they only compound.',
+            co:[
+              {c:'#16a34a', n:'Two Makefile targets',
+               w:'`make` builds the ncurses MVP. `make raylib` builds the V2 backend gated by USE_RAYLIB. Both wired from day one prevents last-minute link errors.'},
+              {c:'#16a34a', n:'-Iinclude flag',
+               w:'Lets every .cpp #include "graph.h" without relative paths. The TA expects this layout — every real C++ project follows it.'}
+            ],
+            code:'# Makefile (already in repo)\nCXX      = clang++\nCXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude\nSRC      = src/graph.cpp\n\nall: pathfinder\n\npathfinder: main.cpp $(SRC)\n\t$(CXX) $(CXXFLAGS) -o pathfinder main.cpp $(SRC) -lncurses\n\nraylib: main.cpp $(SRC)\n\t$(CXX) $(CXXFLAGS) -DUSE_RAYLIB -o pathfinder_rl main.cpp $(SRC) -lraylib -lm\n\nclean:\n\trm -f pathfinder pathfinder_rl',
+            iq:'Why two Makefile targets instead of #ifdef-ing a single binary?',
+            ia:'Two binaries means each can be built and tested independently. The TA can run the ncurses MVP without installing Raylib. Conditional compilation also means the linker only pulls libraries you actually need.',
+            commit:'T1: scaffold repo, Makefile, include/src split (✓ done — 48d12a0)'
+          }
+        ]
+      },
+      {
+        id: 's1b', name: 'Define atomic types', kind: 'build',
+        tasks: [
+          { id:'t2', n:'T2', est:'~20 min',
+            ti:'Define Node + TileType enum',
+            sb:'Atomic unit — every grid cell is a Node carrying terrain + cost',
+            tg:['oop','hd'],
+            accept:[
+              '`enum class TileType { EMPTY, GRASS, MUD, WATER, WALL }` defined',
+              '`tile_cost()` returns 1/3/5/8 for EMPTY/GRASS/MUD/WATER respectively',
+              'WALL returns -1 (impassable sentinel — never used in additive math)',
+              'Node constructor derives `cost` from `type` automatically',
+              'test_stl.cpp prints `Node(2,3,MUD).cost == 5`'
+            ],
+            deliverable: '`include/graph.h` exports TileType + Node; `src/graph.cpp` defines tile_cost',
+            tip:'✓ Done. Tile costs locked at 1/3/5/8 — your convention, not the demo\'s 1/1/3/5.',
+            co:[
+              {c:'#d97706', n:'enum class — scoped, type-safe',
+               w:'`TileType::WALL` syntax forced. Plain enum would leak names into surrounding scope and convert implicitly to int.  // [HD-MODERN]'},
+              {c:'#d97706', n:'WALL = impassable sentinel, not a number',
+               w:'WALL never appears in additive math. GridGraph::buildEdges() will skip wall nodes entirely — no edge is created. Avoids the 999-trick that confuses Dijkstra.'}
+            ],
+            code:'// include/graph.h  (already committed)\n#pragma once\n#include <vector>\n\nenum class TileType { EMPTY, GRASS, MUD, WATER, WALL };\n\ninline int tile_cost(TileType t) {\n    switch (t) {\n        case TileType::EMPTY: return 1;\n        case TileType::GRASS: return 3;\n        case TileType::MUD:   return 5;\n        case TileType::WATER: return 8;\n        case TileType::WALL:  return -1;   // impassable sentinel\n    }\n    return 1;\n}\n\nstruct Node {\n    int row, col;\n    TileType type;\n    int cost;\n    Node(int r, int c, TileType t = TileType::EMPTY)\n        : row(r), col(c), type(t), cost(tile_cost(t)) {}\n};',
+            iq:'Why store cost on Node when it is derivable from type?',
+            ia:'Algorithms read a single int field on every relaxation step — zero function call overhead. Storing it also lets you override cost for a specific node without changing TileType, opening the door to per-cell weight modifiers.',
+            commit:'T2: define Node struct + TileType enum class (✓ done — 48d12a0)'
+          },
+          { id:'t3', n:'T3', est:'~20 min',
+            ti:'Confirm Edge shape + add `make_edge` helper',
+            sb:'Edge { int to; int weight; } — index-based adjacency (your existing stub)',
+            tg:['oop','stl'],
+            accept:[
+              'Edge struct compiles standalone',
+              '`to` is a flat int index (`r * cols + c`), NOT a Node*',
+              '`make_edge(to, w)` helper present and inline',
+              'Comment explaining the index-vs-pointer tradeoff for the HD interview'
+            ],
+            deliverable: 'Edge stub + helper in `include/graph.h` directly below Node',
+            tip:'Keep your stub. Indices are stable across vector reallocs; raw Node* into a std::vector is a heisenbug waiting to happen — the demo uses pointers, your choice is more defensible.',
+            co:[
+              {c:'#d97706', n:'Index-based vs pointer-based — your tradeoff',
+               w:'Stores neighbour as flat index `r*COLS + c`. Pointers would invalidate on `vector::resize`. Indices are tiny, stable, trivially serialisable.'},
+              {c:'#d97706', n:'Weight stored even though BFS ignores it',
+               w:'BFS treats weight as 1. Dijkstra reads it. Adding the field now means zero refactoring when Phase 3 lands.'},
+              {c:'#d97706', n:'Adjacency list scales: 21×21 = 441 nodes, ≤1764 edges',
+               w:'Matrix would be 441×441 = 194k entries. List = 1764 max. ~110× smaller, faster to iterate, no wasted slots for sparse grids.  // [HD-STL]'}
+            ],
+            code:'// include/graph.h  — Edge stub already exists\nstruct Edge {\n    int to;      // flat index: r * cols + c\n    int weight;  // 1 for uniform, otherwise destination tile_cost\n};\n\ninline Edge make_edge(int to, int w) { return Edge{to, w}; }',
+            iq:'Why store `to` as a flat int rather than `Node*`?',
+            ia:'A `std::vector<Node>` reallocates on resize, invalidating every raw pointer into it. Indices are immune — they refer to position, not memory. The whole adjacency list survives a `setTile` rebuild without any pointer fix-ups.',
+            commit:'T3: confirm Edge { int to; int weight; }; add make_edge helper'
+          }
+        ]
+      },
+      {
+        id: 's1c', name: 'Build the GridGraph data layer', kind: 'build',
+        tasks: [
+          { id:'t4a', n:'T4a', est:'~25 min',
+            ti:'GridGraph header — declare interface',
+            sb:'Public surface: ctor + setTile + neighbors + toIndex + numNodes',
+            tg:['oop','hd'],
+            accept:[
+              'Class declared in `include/graph.h`',
+              '`std::vector<std::vector<Node>> nodes` and `std::vector<std::vector<Edge>> adj` as members',
+              '`neighbors(id)` marked `const` and returns `const std::vector<Edge>&`',
+              '`toIndex(r,c)` and `numNodes()` are inline + const'
+            ],
+            deliverable: 'Compiling header — no `buildEdges()` body yet (declaration only)',
+            tip:'Header-first lets the algorithm headers compile against the interface before the implementation lands.',
+            co:[
+              {c:'#7c3aed', n:'Member layout: 2D nodes + flat adj',
+               w:'nodes is the visual world; adj is the algorithmic graph. Same data, two views — algorithms iterate adj; the renderer iterates nodes.'},
+              {c:'#7c3aed', n:'const correctness on neighbors()',
+               w:'Marked `const` so algorithms can take `const GridGraph&`. Compiler then prevents accidental mutation mid-search.'}
+            ],
+            code:'// include/graph.h\nclass GridGraph {\npublic:\n    int rows, cols;\n    std::vector<std::vector<Node>> nodes;       // 2D tiles\n    std::vector<std::vector<Edge>> adj;         // flat adjacency\n\n    GridGraph(int r, int c);\n\n    int  toIndex(int r, int c) const { return r * cols + c; }\n    int  numNodes()             const { return rows * cols; }\n    void setTile(int r, int c, TileType t);\n    const std::vector<Edge>& neighbors(int id) const { return adj[id]; }\n\nprivate:\n    void buildEdges();\n};',
+            iq:'Why expose `nodes` as public but mark `buildEdges()` private?',
+            ia:'`nodes` is the source of truth for the renderer — read-only access is fine. `buildEdges()` is implementation detail; callers should go through `setTile()` which guarantees the adjacency stays in sync.',
+            commit:'T4a: declare GridGraph public interface in include/graph.h'
+          },
+          { id:'t4b', n:'T4b', est:'~35 min',
+            ti:'GridGraph implementation — buildEdges() + setTile()',
+            sb:'Full rebuild on every tile mutation · 4-directional · destination cost as edge weight',
+            tg:['oop','stl','hd'],
+            accept:[
+              'ctor initialises every node as EMPTY, calls buildEdges()',
+              'setTile() mutates one node, then rebuilds entire adjacency',
+              'buildEdges() skips WALL tiles entirely (no edge in or out)',
+              'Edge weight = destination tile cost (moving INTO mud costs 5)',
+              '4-directional only — no diagonals'
+            ],
+            deliverable: '`src/graph.cpp` complete — header tests compile + link',
+            tip:'21×21 = 1764 edge ops max. Rebuild cost is negligible; surgical removal on a weighted list is bug-prone.',
+            co:[
+              {c:'#7c3aed', n:'Why rebuild instead of surgical edge removal',
+               w:'Correctness over premature optimisation. 1764 ops on a 21×21 grid is invisible. Surgical removal on a weighted list requires tracking forward and reverse edges — bug surface area explodes.'},
+              {c:'#7c3aed', n:'Destination tile cost as edge weight',
+               w:'Moving INTO a mud tile costs 5; moving OUT of mud onto empty costs 1. Standard grid-pathfinding convention — the demo does this too.'},
+              {c:'#7c3aed', n:'Direction array trick',
+               w:'`const int dr[]={-1,1,0,0}; dc[]={0,0,-1,1};` keeps the for-loop compact. The 8-direction case is one extra `dr/dc` value if you ever extend.'}
+            ],
+            code:'// src/graph.cpp\n#include "graph.h"\n\nGridGraph::GridGraph(int r, int c) : rows(r), cols(c), nodes(r), adj(r * c) {\n    for (int i = 0; i < r; ++i)\n        for (int j = 0; j < c; ++j)\n            nodes[i].emplace_back(i, j, TileType::EMPTY);\n    buildEdges();\n}\n\nvoid GridGraph::setTile(int r, int c, TileType t) {\n    nodes[r][c] = Node(r, c, t);\n    buildEdges();\n}\n\nvoid GridGraph::buildEdges() {\n    for (auto& v : adj) v.clear();\n    const int dr[] = {-1, 1,  0, 0};\n    const int dc[] = { 0, 0, -1, 1};\n    for (int r = 0; r < rows; ++r)\n        for (int c = 0; c < cols; ++c) {\n            if (nodes[r][c].type == TileType::WALL) continue;\n            int from = toIndex(r, c);\n            for (int d = 0; d < 4; ++d) {\n                int nr = r + dr[d], nc = c + dc[d];\n                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;\n                if (nodes[nr][nc].type == TileType::WALL)         continue;\n                adj[from].push_back({toIndex(nr, nc), nodes[nr][nc].cost});\n            }\n        }\n}',
+            iq:'Why does `neighbors()` return `const std::vector<Edge>&` and not a copy?',
+            ia:'Returning `const&` avoids copying the edge vector on every BFS/Dijkstra step — cheap reference, zero allocation. The const prevents callers mutating graph internals through the reference.',
+            commit:'T4b: implement GridGraph + buildEdges() + setTile()'
+          },
+          { id:'t4c', n:'T4c', est:'~15 min',
+            ti:'Verify GridGraph in test_stl.cpp',
+            sb:'Manual print of adj[0] for a 3×3 grid — eyeball every edge',
+            tg:['tst'],
+            accept:[
+              'test_stl.cpp builds a 3×3 GridGraph, prints adj[i] for every i',
+              'Manually verify: corner has 2 neighbours, edge has 3, interior has 4',
+              'Add one WALL via setTile, re-print, verify wall has zero edges and its neighbours\' edge lists shrunk',
+              'No memory leaks under valgrind / ASan (run once)'
+            ],
+            deliverable: 'Spike pass — keep `test_stl.cpp` gitignored locally',
+            tip:'This 15 minutes will save you 2 hours of "BFS misses a cell" debugging in Phase 2. Cheap insurance.',
+            co:[
+              {c:'#0d9488', n:'Print-debugging is fine for spikes',
+               w:'You\'re not building a unit test framework. A 5-line for loop printing edges is the right tool. Save proper testing for the algorithms.'},
+              {c:'#0d9488', n:'Use a 3×3 grid, not 21×21',
+               w:'9 nodes, 12 edges — fits on one screen, easy to verify by hand. Once 3×3 works, 21×21 works.'}
+            ],
+            code:'// test_stl.cpp (gitignored spike)\n#include "graph.h"\n#include <iostream>\n\nint main() {\n    GridGraph g(3, 3);\n    g.setTile(1, 1, TileType::WALL);\n\n    for (int i = 0; i < g.numNodes(); ++i) {\n        std::cout << "node " << i << " -> ";\n        for (auto& e : g.neighbors(i))\n            std::cout << "(" << e.to << ",w=" << e.weight << ") ";\n        std::cout << "\\n";\n    }\n}',
+            iq:'What does the wall node\'s edge list look like after setTile(WALL)?',
+            ia:'Empty. The wall has no outgoing edges, AND no neighbouring node lists the wall as a destination — buildEdges() skips wall nodes on both sides of the edge check. Total isolation.',
+            commit:'T4c: spike test_stl.cpp printing 3×3 GridGraph adjacency'
+          }
+        ]
+      },
+      {
+        id: 's1d', name: 'Define algorithm interface', kind: 'build',
+        tasks: [
+          { id:'t5', n:'T5', est:'~25 min',
+            ti:'PathfinderBase abstract + SearchResult struct',
+            sb:'The polymorphic interface every algorithm implements [HD-OOP centrepiece]',
+            tg:['oop','hd'],
+            accept:[
+              'PathfinderBase has pure virtual `run()` and `name()`',
+              'Virtual destructor declared `= default`',
+              'SearchResult fields: path, explored_order, explored, cost, elapsed_ms, found',
+              'Cannot instantiate PathfinderBase directly (compiler error)'
+            ],
+            deliverable: '`include/pathfinder_base.h` — every concrete algorithm header can now `: public PathfinderBase`',
+            tip:'The TA probes this hard. Pure virtual + virtual destructor + uniform output struct = the [HD-OOP] story.',
+            co:[
+              {c:'#7c3aed', n:'Pure virtual `run()` — forces subclass implementation',
+               w:'`virtual SearchResult run(...) = 0;` makes PathfinderBase abstract. Cannot instantiate. Every algorithm MUST implement run() — compiler enforces it.'},
+              {c:'#7c3aed', n:'Uniform SearchResult — algorithm-agnostic output',
+               w:'All four algorithms return the same struct. Renderer animates them identically. Zero algorithm-specific code in the Runner — that\'s the [HD-OOP] win.'},
+              {c:'#7c3aed', n:'Virtual destructor — non-negotiable on bases',
+               w:'`virtual ~PathfinderBase() = default;` Without it, deleting a BFS through a PathfinderBase* only calls base destructor. Common HD interview probe.'}
+            ],
+            code:'// include/pathfinder_base.h\n#pragma once\n#include <vector>\n#include <chrono>\n#include "graph.h"\n\nstruct SearchResult {\n    std::vector<int>  path;            // start -> goal, flat indices\n    std::vector<int>  explored_order;  // chronological visit order\n    std::vector<bool> explored;        // visited bitmap for fast lookup\n    int    cost       = 0;\n    double elapsed_ms = 0.0;\n    bool   found      = false;\n};\n\nclass PathfinderBase {\npublic:\n    virtual ~PathfinderBase() = default;\n    virtual SearchResult run(const GridGraph& g, int start, int goal) = 0;\n    virtual const char* name() const = 0;\n};',
+            iq:'What goes wrong if you forget `virtual ~PathfinderBase()`?',
+            ia:'`delete base_ptr` only invokes the base-class destructor. Any RAII members in the derived class — vectors, smart pointers — leak silently. With a virtual destructor, C++ walks the vtable and runs every destructor in the chain. Canonical C++ subtle bug.',
+            commit:'T5: add PathfinderBase abstract + SearchResult struct'
+          }
+        ]
+      }
+    ]
+  },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PHASE 2 — BFS + DFS
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'p2',
+    label: 'PHASE 2 — BFS + DFS',
+    sub: 'std::queue · std::stack · unordered_map · path reconstruction · TA check-in #1',
+    color: '#16a34a',
+    summary: 'Two algorithms sharing the same skeleton. The only structural difference is `std::queue` (FIFO) vs `std::stack` (LIFO). The contrast in explored counts on the same maze is the visible payoff.',
+    deliverable: 'BFS and DFS both return a populated SearchResult on a wall-filled 21×21 grid. TA check-in #1 logged on OnTrack.',
+    stages: [
+      {
+        id: 's2a', name: 'STL spike', kind: 'plan',
+        tasks: [
+          { id:'t6', n:'T6', est:'~20 min',
+            ti:'Spike std::queue + std::stack + unordered_map in test_stl.cpp',
+            sb:'Confirm push/front/pop / push/top/pop / O(1) lookup before integrating',
+            tg:['stl','tst'],
+            accept:[
+              'std::queue: push 1,2,3 → front=1, pop, front=2',
+              'std::stack: push 1,2,3 → top=3, pop, top=2',
+              'unordered_map<int,int>: insert (5,99), lookup .at(5) returns 99',
+              'std::chrono: time a 1000-iteration loop, print ms with 3 decimals'
+            ],
+            deliverable: 'Mental model confirmed before writing real algorithm code',
+            tip:'10 minutes of confidence saves 2 hours of "why is BFS popping in the wrong order".',
+            co:[
+              {c:'#0d9488', n:'STL pre-flight is the senior engineer move',
+               w:'You spike the data structure separately, confirm semantics, then bring it into the real code. Every tricky bug at integration time was a missing confirmation here.'}
+            ],
+            code:'// test_stl.cpp\n#include <queue>\n#include <stack>\n#include <unordered_map>\n#include <chrono>\n#include <iostream>\n\nint main() {\n    std::queue<int> q; q.push(1); q.push(2); q.push(3);\n    std::cout << "queue front: " << q.front() << "\\n"; q.pop();\n    std::cout << "queue after pop: " << q.front() << "\\n";\n\n    std::stack<int> s; s.push(1); s.push(2); s.push(3);\n    std::cout << "stack top: " << s.top() << "\\n"; s.pop();\n    std::cout << "stack after pop: " << s.top() << "\\n";\n\n    std::unordered_map<int,int> m; m[5] = 99;\n    std::cout << "map[5] = " << m.at(5) << "\\n";\n\n    auto t0 = std::chrono::high_resolution_clock::now();\n    int sum = 0; for (int i = 0; i < 1000; ++i) sum += i;\n    auto t1 = std::chrono::high_resolution_clock::now();\n    std::cout << "1000-loop ms: "\n              << std::chrono::duration<double,std::milli>(t1-t0).count() << "\\n";\n}',
+            iq:'Why use std::chrono::high_resolution_clock instead of steady_clock?',
+            ia:'high_resolution_clock typically has sub-microsecond resolution and is perfect for benchmarking individual algorithm runs. steady_clock is monotonic but coarser — better for long-duration timing. The demo uses steady_clock; either is defensible in the HD interview if you justify it.',
+            commit:'T6: STL pre-flight spike — queue, stack, unordered_map, chrono'
+          }
+        ]
+      },
+      {
+        id: 's2b', name: 'BFS implementation', kind: 'build',
+        tasks: [
+          { id:'t7a', n:'T7a', est:'~30 min',
+            ti:'BFS — header + run() skeleton',
+            sb:'Class declaration · empty run() returns default SearchResult',
+            tg:['stl','hd'],
+            accept:[
+              'class BFS : public PathfinderBase declared in `include/bfs.h`',
+              'override on virtual run() and name()',
+              'name() returns "BFS"',
+              'Skeleton compiles + links into main.cpp'
+            ],
+            deliverable: 'BFS instantiable; compiles even though run() is empty',
+            tip:'Get the compile-and-link working FIRST. Then fill in logic. This is "make it compile, make it correct, make it fast" in action.',
+            co:[
+              {c:'#2563eb', n:'override keyword — catches signature mismatches',
+               w:'If you mis-spell or change the parent\'s signature, `override` causes a compile error. Without it, you\'d silently introduce a new method that shadows the virtual.  // [HD-MODERN]'}
+            ],
+            code:'// include/bfs.h\n#pragma once\n#include "pathfinder_base.h"\n\nclass BFS : public PathfinderBase {\npublic:\n    SearchResult run(const GridGraph& g, int start, int goal) override;\n    const char* name() const override { return "BFS"; }\n};\n\n// src/bfs.cpp — placeholder\n#include "bfs.h"\nSearchResult BFS::run(const GridGraph&, int, int) {\n    return {};   // empty result; fill in next task\n}',
+            iq:'Why split the header from implementation when run() is empty?',
+            ia:'Compile-link verification before you write logic. If main.cpp can `BFS bfs; bfs.run(g, 0, 0);` cleanly, the inheritance chain works. Filling in the body next is purely about correctness — not infrastructure.',
+            commit:'T7a: declare BFS class — compiles + links with stub run()'
+          },
+          { id:'t7b', n:'T7b', est:'~35 min',
+            ti:'BFS — full algorithm + path reconstruction',
+            sb:'std::queue frontier · unordered_map cameFrom · chrono timing · path walk-back',
+            tg:['stl','hd'],
+            accept:[
+              'std::queue<int> as the frontier',
+              'std::unordered_map<int,int> cameFrom maps node → predecessor (-1 for start)',
+              'std::chrono::high_resolution_clock wraps the whole search',
+              'Path reconstructed by walking cameFrom back from goal',
+              'res.cost = path.size() - 1 (hop count, since BFS ignores weights)'
+            ],
+            deliverable: 'On a 21×21 with no walls, BFS returns path of length 41 (Manhattan distance + 1)',
+            tip:'BFS only treats every edge as cost 1. The path will go straight through MUD even though MUD is expensive. That\'s the whole point of the contrast vs Dijkstra.',
+            co:[
+              {c:'#2563eb', n:'std::queue — FIFO, the BFS frontier [HD-STL]',
+               w:'push() enqueues, front() peeks, pop() removes. FIFO order is what guarantees BFS finds shortest path by hop count.'},
+              {c:'#2563eb', n:'unordered_map<int,int> cameFrom [HD-STL]',
+               w:'Maps every visited node to its predecessor. O(1) average lookup. Python equivalent: `dict[int, int]`.'},
+              {c:'#2563eb', n:'std::chrono::high_resolution_clock [HD-STL]',
+               w:'Sub-microsecond resolution. Wrap the search loop, compute elapsed_ms after the loop. Feeds the stats panel in Phase 4.'}
+            ],
+            code:'// src/bfs.cpp\n#include "bfs.h"\n#include <queue>\n#include <unordered_map>\n#include <algorithm>\n#include <chrono>\n\nSearchResult BFS::run(const GridGraph& g, int start, int goal) {\n    SearchResult res;\n    res.explored.assign(g.numNodes(), false);\n    auto t0 = std::chrono::high_resolution_clock::now();\n\n    std::queue<int> frontier;\n    std::unordered_map<int,int> came_from;\n    frontier.push(start);\n    res.explored[start] = true;\n    came_from[start]    = -1;\n\n    while (!frontier.empty()) {\n        int cur = frontier.front(); frontier.pop();\n        res.explored_order.push_back(cur);\n        if (cur == goal) { res.found = true; break; }\n        for (const auto& e : g.neighbors(cur)) {\n            if (!res.explored[e.to]) {\n                res.explored[e.to] = true;\n                came_from[e.to]    = cur;\n                frontier.push(e.to);\n            }\n        }\n    }\n\n    if (res.found) {\n        for (int n = goal; n != -1; n = came_from[n]) res.path.push_back(n);\n        std::reverse(res.path.begin(), res.path.end());\n        res.cost = static_cast<int>(res.path.size()) - 1;\n    }\n    auto t1 = std::chrono::high_resolution_clock::now();\n    res.elapsed_ms = std::chrono::duration<double,std::milli>(t1-t0).count();\n    return res;\n}',
+            iq:'Why does BFS guarantee the shortest path by hop count but not by terrain cost?',
+            ia:'FIFO order processes nodes layer by layer — every distance-1 neighbour before any distance-2. The first time we reach the goal, it is via the fewest hops. But BFS treats every edge as cost 1 — it walks straight through MUD (cost 5) instead of around it. Dijkstra is the fix.',
+            commit:'T7b: implement BFS algorithm + path reconstruction + chrono timing'
+          }
+        ]
+      },
+      {
+        id: 's2c', name: 'DFS implementation', kind: 'build',
+        tasks: [
+          { id:'t8', n:'T8', est:'~30 min',
+            ti:'DFS — same skeleton, std::stack frontier',
+            sb:'Copy bfs.cpp · change ONE line · prove the contrast',
+            tg:['stl'],
+            accept:[
+              'class DFS : public PathfinderBase declared',
+              'std::stack<int> replaces std::queue — every other line identical',
+              'Mark visited on push (NOT on pop) to avoid duplicate enqueues',
+              'On the same wall-band grid, DFS visits ≥3× more nodes than BFS'
+            ],
+            deliverable: 'DFS that demonstrably finds A path (not the shortest) and explores the maze depth-first',
+            tip:'DFS path is NOT optimal — make sure your TA demo visually shows DFS visiting far more nodes than BFS. That contrast IS the whole point.',
+            co:[
+              {c:'#2563eb', n:'std::stack — LIFO, the DFS frontier',
+               w:'top() peeks, pop() removes. LIFO causes DFS to dive down one branch fully before backtracking.'},
+              {c:'#2563eb', n:'Mark visited on push, not on pop',
+               w:'If you mark on pop, the same node lands in the stack multiple times — wasted work, and possible loops in cyclic graphs.'},
+              {c:'#2563eb', n:'DFS path is not optimal',
+               w:'May explore 300 nodes for a 20-step path BFS would find in 20. Visual contrast on a 21×21 maze is your strongest evidence that algorithm choice matters.'}
+            ],
+            code:'// src/dfs.cpp — same shape as bfs.cpp, only the container changes\n#include "dfs.h"\n#include <stack>\n#include <unordered_map>\n#include <algorithm>\n#include <chrono>\n\nSearchResult DFS::run(const GridGraph& g, int start, int goal) {\n    SearchResult res;\n    res.explored.assign(g.numNodes(), false);\n    auto t0 = std::chrono::high_resolution_clock::now();\n\n    std::stack<int> frontier;          // <-- only difference vs BFS\n    std::unordered_map<int,int> came_from;\n    frontier.push(start);\n    res.explored[start] = true;\n    came_from[start]    = -1;\n\n    while (!frontier.empty()) {\n        int cur = frontier.top(); frontier.pop();\n        res.explored_order.push_back(cur);\n        if (cur == goal) { res.found = true; break; }\n        for (const auto& e : g.neighbors(cur)) {\n            if (!res.explored[e.to]) {\n                res.explored[e.to] = true;\n                came_from[e.to]    = cur;\n                frontier.push(e.to);\n            }\n        }\n    }\n\n    if (res.found) {\n        for (int n = goal; n != -1; n = came_from[n]) res.path.push_back(n);\n        std::reverse(res.path.begin(), res.path.end());\n        res.cost = static_cast<int>(res.path.size()) - 1;\n    }\n    auto t1 = std::chrono::high_resolution_clock::now();\n    res.elapsed_ms = std::chrono::duration<double,std::milli>(t1-t0).count();\n    return res;\n}',
+            iq:'What is the only structural difference between your BFS and DFS?',
+            ia:'`std::queue` (FIFO) vs `std::stack` (LIFO). Identical cameFrom logic, identical visited marking, identical reconstruction. The cleanest possible demonstration that data-structure choice drives algorithm behaviour.',
+            commit:'T8: implement DFS — symmetric to BFS, only frontier container differs'
+          }
+        ]
+      },
+      {
+        id: 's2d', name: 'Verify Phase 2 end-to-end', kind: 'verify',
+        tasks: [
+          { id:'t9', n:'T9', est:'~25 min',
+            ti:'Side-by-side BFS/DFS smoke test in main.cpp',
+            sb:'Same grid · same start/goal · print explored counts + path lengths',
+            tg:['tst','bld'],
+            accept:[
+              'main.cpp builds a 21×21 with a wall band across row 10',
+              'Runs both BFS and DFS, prints explored_order.size() and path.size()',
+              'BFS path ≤ DFS path (BFS optimal for hops)',
+              'DFS explored ≥ BFS explored (visible difference)',
+              'Zero warnings under `clang++ -std=c++17 -Wall -Wextra`'
+            ],
+            deliverable: 'Terminal output proving algorithmic correctness — paste into your TA demo notes',
+            tip:'This output IS your TA demo. Save the terminal output to `docs/phase2_demo_output.txt` for the record.',
+            co:[
+              {c:'#0d9488', n:'A wall band forces a non-trivial path',
+               w:'On an empty grid, BFS and DFS both find the diagonal — boring. A horizontal wall band with one gap forces both to navigate around obstacles, exposing the difference.'}
+            ],
+            code:'// main.cpp — Phase 2 verification\n#include "graph.h"\n#include "bfs.h"\n#include "dfs.h"\n#include <iostream>\n\nint main() {\n    GridGraph g(21, 21);\n    for (int c = 2; c < 18; ++c) g.setTile(10, c, TileType::WALL);\n    int s = g.toIndex(0, 0), t = g.toIndex(20, 20);\n\n    BFS bfs;  DFS dfs;\n    auto rb = bfs.run(g, s, t);\n    auto rd = dfs.run(g, s, t);\n\n    std::cout << "BFS  path=" << rb.path.size()\n              << " explored=" << rb.explored_order.size()\n              << " ms=" << rb.elapsed_ms << "\\n";\n    std::cout << "DFS  path=" << rd.path.size()\n              << " explored=" << rd.explored_order.size()\n              << " ms=" << rd.elapsed_ms << "\\n";\n}',
+            iq:'What single number on the BFS/DFS output most clearly proves they are different algorithms?',
+            ia:'The explored count. Both find a path; the path lengths might be similar on simple grids. But BFS explored count grows radially (slow), DFS explored count grows linearly (fast and deep). On the same grid, DFS will visit 1.5–4× more nodes — that\'s the algorithmic signature.',
+            commit:'T9: smoke-test main.cpp prints BFS/DFS stats side-by-side'
+          }
+        ]
+      },
+      {
+        id: 's2e', name: 'TA check-in #1', kind: 'ta',
+        tasks: [
+          { id:'t10', n:'T10', est:'TA session',
+            ti:'TA check-in #1 — Phase 2 demo + OnTrack log',
+            sb:'Demo BFS+DFS contrast · architecture pitch · OnTrack confirmation',
+            tg:['ta'],
+            accept:[
+              'Live run of the smoke test in front of TA',
+              'Verbal explanation of pure-virtual + std::queue/std::stack',
+              'TA marks Phase 2 complete on OnTrack',
+              'Screenshot the OnTrack confirmation as evidence'
+            ],
+            deliverable: 'OnTrack record + TA check-in #1 closed',
+            tip:'Book the slot before the demo is perfect. The TA expects work-in-progress.  // [HD checkpoint #1]',
+            co:[
+              {c:'#dc2626', n:'What to show',
+               w:'Same 21×21 + wall band. Run, point at numbers: BFS path ≤ DFS path; DFS explored ≥ BFS explored.'},
+              {c:'#dc2626', n:'What to say',
+               w:'"Both algorithms inherit PathfinderBase and return a SearchResult. The only structural difference is std::queue vs std::stack — the data structure drives the traversal order. The Runner only sees PathfinderBase*."'},
+              {c:'#dc2626', n:'Likely TA questions',
+               w:'Q: Why unordered_map for cameFrom? A: O(1) avg lookup. \\nQ: Why virtual destructor? A: Without it, deleting through PathfinderBase* leaks subclass members.'}
+            ],
+            code:'// TA Q&A cheat sheet\n// Q: Why pure virtual run()?\n// A: Forces every algorithm to implement; PathfinderBase non-instantiable.\n//\n// Q: Can DFS ever find the shortest path?\n// A: Only by coincidence. DFS makes zero optimality guarantee.\n//    BFS guarantees shortest by hop count.\n//\n// Q: Why std::queue<int> not std::queue<Node*>?\n// A: Indices are stable across vector reallocs; pointers are not.\n//    See your Edge tradeoff comment in graph.h.',
+            iq:'Can DFS ever find the shortest path?',
+            ia:'Only by coincidence on a specific graph and a specific neighbour-iteration order. DFS makes zero optimality guarantee. BFS guarantees shortest by hop count; Dijkstra guarantees shortest by cost. DFS guarantees only that it finds *a* path if one exists.',
+            commit:'T10: TA check-in #1 — Phase 2 confirmed on OnTrack'
+          }
+        ]
+      }
+    ]
+  },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PHASE 3 — DIJKSTRA + A*
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'p3',
+    label: 'PHASE 3 — Dijkstra + A*',
+    sub: 'priority_queue<greater<>> · weighted relaxation · Manhattan heuristic · TA check-in #2',
+    color: '#7c3aed',
+    summary: 'The [HD-STL] centrepiece: a custom-comparator priority_queue powering both Dijkstra and A*. The terrain divergence demo (BFS vs Dijkstra on a mud band) is the strongest visual evidence in the project.',
+    deliverable: 'All four algorithms running on the same grid. Cost column on stats output proves Dijkstra/A* find the cheapest path; A* explores fewer nodes than Dijkstra.',
+    stages: [
+      {
+        id: 's3a', name: 'STL spike — priority_queue', kind: 'plan',
+        tasks: [
+          { id:'t11', n:'T11', est:'~25 min',
+            ti:'Spike priority_queue with custom comparator',
+            sb:'Confirm min-heap behaviour BEFORE writing dijkstra.cpp',
+            tg:['stl','tst'],
+            accept:[
+              'Default priority_queue<int> is a max-heap (top=10 for {1,5,10})',
+              'priority_queue<int, vector<int>, greater<int>> is a min-heap (top=1)',
+              'priority_queue<pair<int,int>, vector<pair<int,int>>, greater<>> orders by .first ascending',
+              'Lazy deletion pattern: push (5, X), push (3, X), pop returns (3, X) first'
+            ],
+            deliverable: 'Mental model locked before writing the real algorithm — saves "Dijkstra runs backwards" debug session',
+            tip:'This is the single most common Phase-3 bug: forgetting greater<> and getting a max-heap silently. 15-min spike eliminates it.',
+            co:[
+              {c:'#7c3aed', n:'Default = max-heap, almost always wrong for shortest path',
+               w:'priority_queue is `priority_queue<T, vector<T>, less<T>>` by default. less<T> sorts ascending — but priority_queue puts the LARGEST at the top under less. greater<> flips it.'},
+              {c:'#7c3aed', n:'Pair ordering is lexicographic',
+               w:'pair<int,int> compares .first first, then .second on tie. Push (cost, node) — Dijkstra automatically prefers lower cost.'}
+            ],
+            code:'// test_stl.cpp\n#include <queue>\n#include <vector>\n#include <iostream>\n\nint main() {\n    // Default = max-heap\n    std::priority_queue<int> max_pq;\n    for (int x : {1, 5, 10, 3}) max_pq.push(x);\n    std::cout << "max-heap top: " << max_pq.top() << "\\n";  // 10\n\n    // greater<> = min-heap\n    std::priority_queue<int, std::vector<int>, std::greater<int>> min_pq;\n    for (int x : {1, 5, 10, 3}) min_pq.push(x);\n    std::cout << "min-heap top: " << min_pq.top() << "\\n";  // 1\n\n    // pair<cost,node> min-heap — the Dijkstra pattern\n    using P = std::pair<int,int>;\n    std::priority_queue<P, std::vector<P>, std::greater<P>> dpq;\n    dpq.push({5, 100});\n    dpq.push({3, 200});\n    dpq.push({7, 300});\n    while (!dpq.empty()) {\n        std::cout << dpq.top().first << "/" << dpq.top().second << " ";\n        dpq.pop();\n    }\n    // Output: 3/200 5/100 7/300\n}',
+            iq:'Why is the default priority_queue a max-heap, not a min-heap?',
+            ia:'priority_queue uses `less<T>` by default. The standard puts the *greatest* element under `less` at the top. To get min-heap behaviour, you flip the comparator to `greater<T>`. This is the C++ convention; Python\'s heapq is the opposite (always min-heap).',
+            commit:'T11: spike priority_queue<greater<>> + pair ordering'
+          }
+        ]
+      },
+      {
+        id: 's3b', name: 'Dijkstra implementation', kind: 'build',
+        tasks: [
+          { id:'t12a', n:'T12a', est:'~25 min',
+            ti:'Dijkstra — header + relaxation skeleton',
+            sb:'Class declaration · dist[] init · empty main loop',
+            tg:['stl','hd'],
+            accept:[
+              'class Dijkstra : public PathfinderBase declared',
+              'dist[] vector initialised to INT_MAX, dist[start]=0',
+              'priority_queue<pair<int,int>, vector<pair<int,int>>, greater<>> declared',
+              'Compile-link verification: Dijkstra dij; dij.run(g,s,t); compiles'
+            ],
+            deliverable: 'Skeleton compiles; main loop is empty',
+            tip:'INT_MAX from <climits>, not <limits>. Easy to confuse — <climits> for C-style INT_MAX, <limits> for std::numeric_limits<int>::max().',
+            co:[
+              {c:'#7c3aed', n:'Why INT_MAX as the sentinel',
+               w:'Any node not yet reached has "infinite" distance. INT_MAX is the standard sentinel — the only risk is overflow when you do `dist[cur] + e.weight`. Cap edge weights or use `std::numeric_limits<int>::max() / 4` like the demo.'}
+            ],
+            code:'// include/dijkstra.h\n#pragma once\n#include "pathfinder_base.h"\n\nclass Dijkstra : public PathfinderBase {\npublic:\n    SearchResult run(const GridGraph& g, int start, int goal) override;\n    const char* name() const override { return "Dijkstra"; }\n};\n\n// src/dijkstra.cpp — skeleton\n#include "dijkstra.h"\n#include <queue>\n#include <vector>\n#include <climits>\n\nSearchResult Dijkstra::run(const GridGraph& g, int start, int goal) {\n    SearchResult res;\n    res.explored.assign(g.numNodes(), false);\n    std::vector<int> dist(g.numNodes(), INT_MAX);\n    dist[start] = 0;\n    // priority_queue declared, body to follow\n    return res;\n}',
+            iq:'Why declare the priority_queue inside run(), not as a class member?',
+            ia:'Each call to run() needs a fresh queue. A member would persist state between calls — disaster for re-running the algorithm on a mutated graph. Locality also helps the compiler stack-allocate the heap backing.',
+            commit:'T12a: declare Dijkstra class + skeleton run() with dist init'
+          },
+          { id:'t12b', n:'T12b', est:'~50 min',
+            ti:'Dijkstra — full algorithm + lazy deletion + cost reconstruction',
+            sb:'Custom comparator min-heap · stale-entry skip · res.cost = dist[goal]',
+            tg:['stl','hd'],
+            accept:[
+              'priority_queue declared with std::greater<> comparator',
+              'Lazy deletion: `if (cost > dist[cur]) continue;` skips stale entries',
+              'Edge relaxation: `if (dist[cur] + e.weight < dist[e.to])` triggers update',
+              'res.cost = dist[goal] (true cost, not hop count)',
+              'On a 21×21 with mud band, Dijkstra cost < BFS cost'
+            ],
+            deliverable: 'Working Dijkstra; smoke-tested against BFS on a mud band',
+            tip:'Single most important Phase-3 commit. The TA WILL ask why priority_queue over sorted vector — have the answer ready.',
+            co:[
+              {c:'#7c3aed', n:'std::priority_queue<…, std::greater<>> [HD-STL]',
+               w:'Custom comparator flips max-heap to min-heap. Smallest cost out first. Without this, Dijkstra runs backwards and is silently incorrect — common HD interview probe.'},
+              {c:'#7c3aed', n:'Lazy deletion via stale-entry skip',
+               w:'Old entries linger when a shorter path is found. Skip on pop with `if (cost > dist[cur]) continue;`. Cleaner than std::set::erase, and faster.'},
+              {c:'#7c3aed', n:'res.cost = dist[goal]',
+               w:'BFS reports hop count; Dijkstra reports true cost. The stats panel highlights the divergence on terrain.'}
+            ],
+            code:'// src/dijkstra.cpp (full)\n#include "dijkstra.h"\n#include <queue>\n#include <unordered_map>\n#include <vector>\n#include <climits>\n#include <algorithm>\n#include <chrono>\n\nSearchResult Dijkstra::run(const GridGraph& g, int start, int goal) {\n    SearchResult res;\n    res.explored.assign(g.numNodes(), false);\n    auto t0 = std::chrono::high_resolution_clock::now();\n\n    std::vector<int> dist(g.numNodes(), INT_MAX);\n    std::unordered_map<int,int> came_from;\n    using P = std::pair<int,int>;\n    std::priority_queue<P, std::vector<P>, std::greater<P>> pq;  // [HD-STL]\n\n    dist[start] = 0;\n    came_from[start] = -1;\n    pq.push({0, start});\n\n    while (!pq.empty()) {\n        auto [cost, cur] = pq.top(); pq.pop();\n        if (cost > dist[cur]) continue;        // lazy deletion\n        if (res.explored[cur]) continue;\n        res.explored[cur] = true;\n        res.explored_order.push_back(cur);\n        if (cur == goal) { res.found = true; break; }\n        for (const auto& e : g.neighbors(cur)) {\n            int nc = dist[cur] + e.weight;\n            if (nc < dist[e.to]) {\n                dist[e.to]      = nc;\n                came_from[e.to] = cur;\n                pq.push({nc, e.to});\n            }\n        }\n    }\n\n    if (res.found) {\n        for (int n = goal; n != -1; n = came_from[n]) res.path.push_back(n);\n        std::reverse(res.path.begin(), res.path.end());\n        res.cost = dist[goal];\n    }\n    auto t1 = std::chrono::high_resolution_clock::now();\n    res.elapsed_ms = std::chrono::duration<double,std::milli>(t1-t0).count();\n    return res;\n}',
+            iq:'Why use priority_queue with greater<> instead of a sorted std::vector?',
+            ia:'priority_queue insertion is O(log n); sorted vector insertion is O(n). On a 21×21 with many re-pushes, the heap is meaningfully faster. Canonical reason for using a heap in Dijkstra. The TA will ask this — have the answer ready.',
+            commit:'T12b: implement Dijkstra with priority_queue<greater<>> + lazy deletion'
+          }
+        ]
+      },
+      {
+        id: 's3c', name: 'A* implementation', kind: 'build',
+        tasks: [
+          { id:'t13a', n:'T13a', est:'~15 min',
+            ti:'A* — Manhattan heuristic helper',
+            sb:'Inline function · admissible on 4-dir grid · used by run()',
+            tg:['stl'],
+            accept:[
+              '`manhattan(a, b, cols)` returns |dr| + |dc|',
+              'static linkage (no symbol leak)',
+              'Admissibility comment in the file: never overestimates true cost'
+            ],
+            deliverable: 'Heuristic function in src/astar.cpp, ready for the priority key',
+            tip:'Admissibility is THE word the HD assessor wants to hear. Memorise: "Manhattan never overestimates because every edge costs at least 1 on a 4-dir grid."',
+            co:[
+              {c:'#7c3aed', n:'Why static instead of inline',
+               w:'static gives internal linkage — the function is only visible in this translation unit, no symbol pollution. inline is for header functions; static is for cpp helpers.'}
+            ],
+            code:'// src/astar.cpp (top)\n#include "astar.h"\n#include <cstdlib>\n\n// Admissible: never overestimates true cost on a 4-dir grid\n// where minimum edge weight >= 1. Required for A* optimality.\nstatic int manhattan(int a, int b, int cols) {\n    int dr = std::abs(a/cols - b/cols);\n    int dc = std::abs(a%cols - b%cols);\n    return dr + dc;\n}',
+            iq:'What is admissibility, and why does A* need it?',
+            ia:'Admissibility = never overestimating the true cost. A heuristic that overestimates can mislead A* into committing to a suboptimal path. Manhattan is admissible on a 4-dir grid because every edge costs ≥1, so the minimum number of moves IS the lower bound on cost.',
+            commit:'T13a: add Manhattan heuristic helper in src/astar.cpp'
+          },
+          { id:'t13b', n:'T13b', est:'~40 min',
+            ti:'A* — full algorithm (Dijkstra + heuristic)',
+            sb:'Single-line change vs Dijkstra: push {g+h, node} instead of {g, node}',
+            tg:['stl','hd'],
+            accept:[
+              'Identical structure to Dijkstra — copy bfs.cpp logic',
+              'Priority key is g_cost[next] + manhattan(next, goal)',
+              'g_cost relaxation unchanged from Dijkstra',
+              'On a 21×21 OPEN grid (no walls), A* explored < Dijkstra explored',
+              'On the SAME grid, A*.cost == Dijkstra.cost (both optimal)'
+            ],
+            deliverable: 'A* finds the same cost as Dijkstra but with fewer node expansions on open terrain',
+            tip:'If A* explored == Dijkstra explored on every grid, your heuristic is degenerate. Test on an OPEN 21×21 to verify the win.',
+            co:[
+              {c:'#7c3aed', n:'f(n) = g(n) + h(n) — the A* equation',
+               w:'g(n) = actual cost from start. h(n) = heuristic to goal. A* prioritises by f — nodes both cheap to reach AND close to goal pop first.'},
+              {c:'#7c3aed', n:'Same priority_queue structure as Dijkstra',
+               w:'Only line that changes vs Dijkstra: push `{g + h, node}` instead of `{g, node}`. Heuristic warps search space toward goal, cuts nodes_expanded dramatically on open grids.'},
+              {c:'#7c3aed', n:'Cost output unchanged from Dijkstra',
+               w:'A* explores fewer nodes but produces the same cost (admissible heuristic = optimal solution). The visible win is in the explored count, not the cost.'}
+            ],
+            code:'// src/astar.cpp (full — after manhattan helper)\n#include <queue>\n#include <unordered_map>\n#include <vector>\n#include <climits>\n#include <algorithm>\n#include <chrono>\n\nSearchResult AStar::run(const GridGraph& g, int start, int goal) {\n    SearchResult res;\n    res.explored.assign(g.numNodes(), false);\n    auto t0 = std::chrono::high_resolution_clock::now();\n\n    std::vector<int> g_cost(g.numNodes(), INT_MAX);\n    std::unordered_map<int,int> came_from;\n    using P = std::pair<int,int>;  // (f, node)\n    std::priority_queue<P, std::vector<P>, std::greater<P>> pq;\n\n    g_cost[start] = 0;\n    came_from[start] = -1;\n    pq.push({manhattan(start, goal, g.cols), start});\n\n    while (!pq.empty()) {\n        auto [f, cur] = pq.top(); pq.pop();\n        if (res.explored[cur]) continue;\n        res.explored[cur] = true;\n        res.explored_order.push_back(cur);\n        if (cur == goal) { res.found = true; break; }\n        for (const auto& e : g.neighbors(cur)) {\n            int ng = g_cost[cur] + e.weight;\n            if (ng < g_cost[e.to]) {\n                g_cost[e.to]    = ng;\n                came_from[e.to] = cur;\n                int h = manhattan(e.to, goal, g.cols);\n                pq.push({ng + h, e.to});       // <-- only difference vs Dijkstra\n            }\n        }\n    }\n\n    if (res.found) {\n        for (int n = goal; n != -1; n = came_from[n]) res.path.push_back(n);\n        std::reverse(res.path.begin(), res.path.end());\n        res.cost = g_cost[goal];\n    }\n    auto t1 = std::chrono::high_resolution_clock::now();\n    res.elapsed_ms = std::chrono::duration<double,std::milli>(t1-t0).count();\n    return res;\n}',
+            iq:'What single change in dijkstra.cpp turns it into A*?',
+            ia:'Replace `pq.push({nc, e.to})` with `pq.push({nc + h(e.to, goal), e.to})`. The dist/g_cost relaxation is unchanged; only the priority key changes. Cleanest possible illustration of "A* is Dijkstra plus a heuristic".',
+            commit:'T13b: implement A* — copy Dijkstra structure, push f=g+h'
+          }
+        ]
+      },
+      {
+        id: 's3d', name: 'Verify weighted divergence', kind: 'verify',
+        tasks: [
+          { id:'t14', n:'T14', est:'~30 min',
+            ti:'Weighted terrain divergence demo [HD-TERRAIN]',
+            sb:'Mud band scenario · prove BFS != Dijkstra on cost · the strongest visual proof',
+            tg:['hd','tst'],
+            accept:[
+              'Demo grid: short mud corridor (cost 5×) vs longer empty corridor (cost 1×)',
+              'BFS picks the mud route (fewer hops, higher cost)',
+              'Dijkstra picks the empty route (more hops, lower cost)',
+              'Output: "BFS hops=N1 cost=C1 | Dijkstra hops=N2 cost=C2" with C1 > C2 and N1 < N2',
+              'Saved to docs/phase3_terrain_demo_output.txt'
+            ],
+            deliverable: 'Terminal output proving Dijkstra finds the truly cheapest path',
+            tip:'When the assessor asks "why Dijkstra over BFS", you don\'t explain — you run this demo and point at the cost column.',
+            co:[
+              {c:'#7c3aed', n:'Design the demo grid deliberately',
+               w:'Short mud corridor between start and goal vs longer empty corridor. BFS picks short (5 hops × 5 cost = 25). Dijkstra picks long (12 hops × 1 cost = 12). Cost-12 < cost-25 = the demo.'},
+              {c:'#7c3aed', n:'Print path COST, not just hop count',
+               w:'After running each algorithm, sum edge weights along the path. Show: "BFS hops=5 cost=25 | Dijkstra hops=12 cost=12". The cost column IS the demo.'},
+              {c:'#7c3aed', n:'This lands the HD interview',
+               w:'The contrast IS the answer. Verbal explanation cannot match those numbers. This is "evidence of design thinking" the unit brief asks for.'}
+            ],
+            code:'// docs/phase3_terrain_demo.cpp\n#include "graph.h"\n#include "bfs.h"\n#include "dijkstra.h"\n#include <iostream>\n\nint main() {\n    GridGraph g(7, 13);\n    for (int c = 0; c < 13; ++c) g.setTile(3, c, TileType::MUD);\n    for (int c = 1; c < 12; ++c) g.setTile(2, c, TileType::WALL);\n\n    int s = g.toIndex(0, 0), t = g.toIndex(6, 12);\n    BFS bfs;  Dijkstra dij;\n    auto rb = bfs.run(g, s, t);\n    auto rd = dij.run(g, s, t);\n    std::cout << "BFS       hops=" << rb.path.size()-1 << " cost=" << rb.cost << "\\n";\n    std::cout << "Dijkstra  hops=" << rd.path.size()-1 << " cost=" << rd.cost << "\\n";\n}',
+            iq:'On a grid with all-EMPTY tiles, what does Dijkstra reduce to?',
+            ia:'Dijkstra degenerates to BFS — every edge has weight 1, so the priority queue processes nodes in the same order a FIFO queue would. The distinction only emerges when terrain costs vary. This is why a flat-terrain demo is unconvincing; you need the mud band.',
+            commit:'T14: add docs/phase3_terrain_demo.cpp + saved output'
+          }
+        ]
+      },
+      {
+        id: 's3e', name: 'TA check-in #2', kind: 'ta',
+        tasks: [
+          { id:'t15', n:'T15', est:'TA session',
+            ti:'TA check-in #2 — Phase 3 demo + OnTrack log',
+            sb:'4-algorithm comparison · weighted divergence · OnTrack mark',
+            tg:['ta'],
+            accept:[
+              'Live run: BFS, DFS, Dijkstra, A* on the same grid',
+              'Show stats: hops, cost, explored, ms',
+              'Run the mud-band scenario; explain admissibility',
+              'TA marks Phase 3 complete on OnTrack'
+            ],
+            deliverable: 'OnTrack record + TA check-in #2 closed',
+            tip:'Have all four algorithms running by this check-in. Be ready to defend `priority_queue<greater<>>` vs sorted vector — the canonical HD interview probe.  // [HD checkpoint #2]',
+            co:[
+              {c:'#dc2626', n:'What to show',
+               w:'BFS, DFS, Dijkstra, A* on the same mud-band grid. Stats column proves Dijkstra/A* find the truly cheapest route.'},
+              {c:'#dc2626', n:'What to say',
+               w:'"Dijkstra uses std::priority_queue with std::greater<> as a custom comparator — that flips the default max-heap to a min-heap. A* reuses Dijkstra\'s structure but pushes (g+h, node) instead of (g, node). Manhattan is admissible on a 4-dir grid."'},
+              {c:'#dc2626', n:'Likely TA questions',
+               w:'Q: What is admissibility? A: Heuristic never overestimates true cost. \\nQ: Why lazy deletion? A: priority_queue has no efficient erase; checking stale entries on pop is O(log n) cheaper than maintaining a decrease-key structure.'}
+            ],
+            code:'// Phase 3 demo skeleton — main.cpp\nBFS bfs; DFS dfs; Dijkstra dij; AStar a;\nfor (auto& [name, r] : {\n    std::pair{"BFS", bfs.run(g,s,t)},\n    std::pair{"DFS", dfs.run(g,s,t)},\n    std::pair{"Dij", dij.run(g,s,t)},\n    std::pair{"A*",  a.run(g,s,t)}\n}) {\n    std::cout << name << "  hops=" << r.path.size()-1\n              << "  cost=" << r.cost\n              << "  explored=" << r.explored_order.size()\n              << "  ms=" << r.elapsed_ms << "\\n";\n}',
+            iq:'Why does A* explore fewer nodes than Dijkstra on open terrain but the same on dense mazes?',
+            ia:'On open terrain, the heuristic strongly biases the frontier toward the goal — far fewer "wasted" expansions in the wrong direction. On dense mazes, walls force A* to backtrack just as much as Dijkstra does; the heuristic provides little guidance. The win is geometry-dependent.',
+            commit:'T15: TA check-in #2 — Phase 3 confirmed on OnTrack'
+          }
+        ]
+      }
+    ]
+  },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PHASE 4 — RUNNER + ncurses UI
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'p4',
+    label: 'PHASE 4 — Runner + ncurses UI',
+    sub: 'Renderer abstract · NcursesRenderer · AlgorithmRunner · 4-panel animation · interactive controls',
+    color: '#0891b2',
+    summary: 'The polymorphism story comes alive: a vector<unique_ptr<PathfinderBase>> + a Renderer reference, all driven by a single animation loop. **Your scope is richer than the demo** — keep the cursor + wall painting (the demo dropped them).',
+    deliverable: '4 algorithms animating side-by-side on a 21×21 grid · interactive cursor + wall painting · stats bar with per-algo timing · TA check-in #3 logged.',
+    stages: [
+      {
+        id: 's4a', name: 'Plan the architecture', kind: 'plan',
+        tasks: [
+          { id:'t16', n:'T16', est:'~30 min',
+            ti:'Sketch Renderer interface + AlgorithmFrame + InputAction',
+            sb:'Decide the contract BEFORE implementing either backend',
+            tg:['oop','hd'],
+            accept:[
+              'Renderer pure-virtual methods declared (init, shutdown, draw_frame, draw_stats, poll_input)',
+              'AlgorithmFrame struct: name, result*, animation_step, elapsed_ms',
+              'InputAction enum: None, Quit, Run, Reset, GenerateMaze, MoveUp/Down/Left/Right, ToggleWall',
+              'Sketch saved to docs/phase4_architecture.md before any code'
+            ],
+            deliverable: 'A header file + a 1-page design doc explaining the polymorphism boundary',
+            tip:'Resist the urge to code first. 30 min of planning saves 3 hours of "the renderer is taking too many params" refactoring.',
+            co:[
+              {c:'#0891b2', n:'Why decide the contract first',
+               w:'Both NcursesRenderer and RaylibRenderer must implement this — getting the signature right NOW means zero changes later. Refactoring an interface across two implementations is the fastest way to lose a weekend.'},
+              {c:'#0891b2', n:'InputAction decouples key codes from logic',
+               w:'enum class with named actions. ncurses translates KEY_UP → InputAction::MoveUp; Raylib does the same. Runner reads actions only, never raw keys.  // [HD-MODERN]'}
+            ],
+            code:'// include/renderer.h\n#pragma once\n#include "graph.h"\n#include "pathfinder_base.h"\n#include <vector>\n#include <string>\n\nenum class InputAction {\n    None, Quit, Run, Reset, GenerateMaze, ToggleFullscreen,\n    MoveUp, MoveDown, MoveLeft, MoveRight, ToggleWall\n};\n\nstruct AlgorithmFrame {\n    const SearchResult* result;     // borrowed view\n    std::string         name;\n    int    animation_step = 0;\n    double elapsed_ms     = 0.0;\n};\n\nclass Renderer {\npublic:\n    virtual ~Renderer() = default;\n    virtual void init() = 0;\n    virtual void shutdown() = 0;\n    virtual void draw_frame(const GridGraph& g, int start, int goal,\n                            const std::vector<AlgorithmFrame>& frames,\n                            int cursor_row, int cursor_col) = 0;\n    virtual InputAction poll_input() = 0;\n};',
+            iq:'Why use `enum class InputAction` instead of returning raw int key codes?',
+            ia:'enum class decouples UI from algorithm code. Runner says "if action == InputAction::Run" — readable, type-safe. Raw int codes leak ncurses-specific KEY_F1 constants into the Runner, breaking the abstraction the moment Raylib enters in Phase 5.',
+            commit:'T16: design Renderer interface + AlgorithmFrame + InputAction'
+          }
+        ]
+      },
+      {
+        id: 's4b', name: 'NcursesRenderer — backend', kind: 'build',
+        tasks: [
+          { id:'t17a', n:'T17a', est:'~30 min',
+            ti:'NcursesRenderer — init/shutdown + colour pairs',
+            sb:'initscr · colour table · nodelay · keypad',
+            tg:['ui'],
+            accept:[
+              'init() calls initscr/cbreak/noecho/curs_set(0)',
+              'nodelay(stdscr, TRUE) for non-blocking getch',
+              'keypad(stdscr, TRUE) for arrow keys',
+              '9 colour pairs registered (EMPTY/GRASS/MUD/WATER/WALL/EXPLORED/PATH/START/GOAL)',
+              'shutdown() calls endwin()'
+            ],
+            deliverable: 'Terminal initialises with colour, doesn\'t echo input, doesn\'t block',
+            tip:'Test in a real terminal — VS Code\'s integrated terminal glitches colour. iTerm/Alacritty/kitty work cleanly.',
+            co:[
+              {c:'#0891b2', n:'nodelay is mandatory for animation',
+               w:'Without it, getch() blocks waiting for input — every frame freezes. With it, getch() returns ERR if no key, and the runner can advance frames at ~28 FPS.'},
+              {c:'#0891b2', n:'curs_set(0) hides the terminal cursor',
+               w:'Otherwise the system cursor blinks somewhere weird on top of your animation. You\'re drawing your OWN cursor (the editing cursor) — hide the system one.'}
+            ],
+            code:'// src/ncurses_renderer.cpp (init/shutdown only)\n#include "ncurses_renderer.h"\n#include <ncurses.h>\n\nvoid NcursesRenderer::init() {\n    initscr(); cbreak(); noecho();\n    curs_set(0); keypad(stdscr, TRUE); nodelay(stdscr, TRUE);\n    start_color(); use_default_colors();\n    init_pair(CP_EMPTY,    COLOR_WHITE,  -1);\n    init_pair(CP_GRASS,    COLOR_GREEN,  -1);\n    init_pair(CP_MUD,      COLOR_YELLOW, -1);\n    init_pair(CP_WATER,    COLOR_CYAN,   -1);\n    init_pair(CP_WALL,     COLOR_RED,    -1);\n    init_pair(CP_EXPLORED, COLOR_BLUE,   -1);\n    init_pair(CP_PATH,     COLOR_MAGENTA,-1);\n    init_pair(CP_START,    COLOR_BLACK,  COLOR_GREEN);\n    init_pair(CP_GOAL,     COLOR_BLACK,  COLOR_RED);\n}\n\nvoid NcursesRenderer::shutdown() { endwin(); }',
+            iq:'What does `use_default_colors()` do?',
+            ia:'Lets you pass -1 as a colour to mean "the terminal\'s default background/foreground". Without it, you must specify a concrete COLOR_BLACK/etc. With it, your app respects the user\'s terminal theme — looks native instead of garish.',
+            commit:'T17a: NcursesRenderer init() + shutdown() + colour pairs'
+          },
+          { id:'t17b', n:'T17b', est:'~50 min',
+            ti:'NcursesRenderer — draw_frame() with 4 panels',
+            sb:'4 panels via column offset · animated explored prefix · path overlay · cursor',
+            tg:['ui','hd'],
+            accept:[
+              'Each panel = (cols × 2 + 4 gutter) wide',
+              'draw_panel(g, frame, panel_col) renders one algorithm view',
+              'Explored cells drawn for indices 0..animation_step only',
+              'Path drawn AFTER explored animation completes',
+              'Cursor highlighted with reverse-video at (cursor_row, cursor_col)',
+              'Algorithm name printed above each panel'
+            ],
+            deliverable: 'Four panels visible side-by-side on the same grid, each animating independently',
+            tip:'Keep draw_panel(panel_col) as the only positioning logic. The Runner passes the offset; the Renderer draws at that offset. Don\'t hardcode panel widths in two places.',
+            co:[
+              {c:'#0891b2', n:'4 panels via column offset',
+               w:'panel_col = 0, panel_width, 2*panel_width, 3*panel_width. draw_grid takes panel_col as a param. One method serves all four panels.'},
+              {c:'#0891b2', n:'Animation = explored prefix',
+               w:'`for (int i = 0; i < min(animation_step, explored_order.size()); ++i)` — only draw cells revealed so far. Each tick advances animation_step by 1.'},
+              {c:'#0891b2', n:'Path drawn last, on top',
+               w:'After explored animation finishes, overlay the path with `*` glyph. The visual sequence: explored fills the maze → path is highlighted on top.'}
+            ],
+            code:'// src/ncurses_renderer.cpp (draw_frame core)\nvoid NcursesRenderer::draw_frame(const GridGraph& g, int s, int gl,\n                                 const std::vector<AlgorithmFrame>& frames,\n                                 int cur_r, int cur_c) {\n    erase();\n    int panel_w = g.cols * 2 + 4;\n    for (size_t i = 0; i < frames.size(); ++i) {\n        draw_panel(g, s, gl, frames[i], i * panel_w, cur_r, cur_c);\n    }\n    refresh();\n}\n\nvoid NcursesRenderer::draw_panel(const GridGraph& g, int s, int gl,\n                                 const AlgorithmFrame& f, int ox,\n                                 int cur_r, int cur_c) {\n    mvprintw(0, ox, "%s", f.name.c_str());\n    // tiles\n    for (int r = 0; r < g.rows; ++r)\n        for (int c = 0; c < g.cols; ++c)\n            draw_tile(r, c, g.nodes[r][c].type, ox);\n    // explored prefix\n    int limit = std::min(f.animation_step, (int)f.result->explored_order.size());\n    for (int i = 0; i < limit; ++i) {\n        int id = f.result->explored_order[i];\n        draw_cell(id / g.cols, id % g.cols, CP_EXPLORED, \'.\', ox);\n    }\n    // path overlay (only after explored done)\n    if (f.animation_step >= (int)f.result->explored_order.size()) {\n        for (int id : f.result->path)\n            draw_cell(id / g.cols, id % g.cols, CP_PATH, \'*\', ox);\n    }\n    // start/goal markers\n    draw_cell(s / g.cols, s % g.cols, CP_START, \'S\', ox);\n    draw_cell(gl / g.cols, gl % g.cols, CP_GOAL, \'G\', ox);\n    // cursor (only on the first panel — editor lives in panel 0)\n    if (ox == 0) draw_cursor(cur_r, cur_c);\n}',
+            iq:'Why draw the cursor on panel 0 only, not on all four?',
+            ia:'The cursor is the editing tool — it belongs to the world model, not to the algorithm display. Only the first panel shows the editable view; panels 1-3 display algorithm output for that same world. One cursor = one editing context = no confusion.',
+            commit:'T17b: implement draw_frame() with 4 panels + animation + cursor'
+          },
+          { id:'t17c', n:'T17c', est:'~25 min',
+            ti:'NcursesRenderer — draw_stats() + poll_input()',
+            sb:'Stats row below grid · key → InputAction translation',
+            tg:['ui'],
+            accept:[
+              'draw_stats prints `name | hops | cost | explored | ms` per algo',
+              'Best value per column highlighted (bold or color)',
+              'poll_input maps WASD/arrows → MoveUp/Down/Left/Right',
+              'SPACE → ToggleWall, R → Run, G → GenerateMaze, Q/ESC → Quit',
+              'No raw int codes leak from poll_input — only InputAction'
+            ],
+            deliverable: 'Renderer is complete; ready to wire into the Runner',
+            tip:'Translate keys at the renderer boundary. The Runner should NEVER see KEY_UP — only InputAction::MoveUp.',
+            co:[
+              {c:'#0891b2', n:'Best value highlighting',
+               w:'Track the min hops, min cost, min explored, min ms across frames. When printing, compare each value — if equal to min, use A_BOLD or a different color pair. Trivial logic, big TA-demo impact.'},
+              {c:'#0891b2', n:'Key-to-action table',
+               w:'A static const map keeps the translation in one place. Adding a key means adding one row, not editing the switch in two backends.'}
+            ],
+            code:'// src/ncurses_renderer.cpp (poll_input)\nInputAction NcursesRenderer::poll_input() {\n    int ch = getch();\n    if (ch == ERR) return InputAction::None;\n    switch (ch) {\n        case KEY_UP:    case \'w\': return InputAction::MoveUp;\n        case KEY_DOWN:  case \'s\': return InputAction::MoveDown;\n        case KEY_LEFT:  case \'a\': return InputAction::MoveLeft;\n        case KEY_RIGHT: case \'d\': return InputAction::MoveRight;\n        case \' \':                return InputAction::ToggleWall;\n        case \'r\': case \'R\':      return InputAction::Run;\n        case \'g\': case \'G\':      return InputAction::GenerateMaze;\n        case \'c\': case \'C\':      return InputAction::Reset;\n        case \'q\': case \'Q\':\n        case 27:                  return InputAction::Quit;\n        default:                  return InputAction::None;\n    }\n}',
+            iq:'Why does poll_input() return InputAction::None for unrecognised keys, not just ignore them?',
+            ia:'Returning a value gives the Runner a uniform contract — it always handles the result, even if "no action". Silent-ignore would mean the Runner couldn\'t distinguish "no input this frame" from "input we didn\'t recognise". Explicit None is the clearer design.',
+            commit:'T17c: implement draw_stats() + poll_input() with InputAction map'
+          }
+        ]
+      },
+      {
+        id: 's4c', name: 'AlgorithmRunner — orchestrate', kind: 'build',
+        tasks: [
+          { id:'t18a', n:'T18a', est:'~30 min',
+            ti:'AlgorithmRunner — header + ownership',
+            sb:'unique_ptr<PathfinderBase> ownership · Renderer& reference · cursor state',
+            tg:['oop','stl','hd'],
+            accept:[
+              'class AlgorithmRunner declared',
+              'std::vector<std::unique_ptr<PathfinderBase>> as member [HD-MODERN]',
+              'Renderer& as member (non-owning reference)',
+              'cursor_r_, cursor_c_, step_ms_ as members',
+              'add_algorithm(std::unique_ptr<PathfinderBase>) move-takes ownership'
+            ],
+            deliverable: 'Runner header that compiles + a clear ownership story for the HD interview',
+            tip:'unique_ptr in the vector is the [HD-MODERN] proof. The TA WILL ask: "what owns the algorithms?" Answer: the Runner, via unique_ptr — auto-deleted with virtual destructor on scope exit.',
+            co:[
+              {c:'#7c3aed', n:'unique_ptr ownership [HD-MODERN]',
+               w:'Vector of unique_ptr means: when the Runner is destroyed, every algorithm is automatically deleted, with the correct subclass destructor invoked via virtual dispatch. Raw pointers would leak; manual delete is bug-prone.'},
+              {c:'#7c3aed', n:'Renderer as reference, not unique_ptr',
+               w:'main.cpp owns the renderer (it has to construct it, gated by USE_RAYLIB). The Runner just borrows a reference. Two owners would be a double-free disaster.'}
+            ],
+            code:'// include/runner.h\n#pragma once\n#include "graph.h"\n#include "pathfinder_base.h"\n#include "renderer.h"\n#include <memory>\n#include <vector>\n\nclass AlgorithmRunner {\npublic:\n    AlgorithmRunner(GridGraph& g, Renderer& r) : grid_(g), renderer_(r) {}\n\n    void add_algorithm(std::unique_ptr<PathfinderBase> a) {\n        algorithms_.push_back(std::move(a));\n    }\n\n    void run_loop(int start, int goal, int step_ms = 36);\n\nprivate:\n    GridGraph& grid_;\n    Renderer&  renderer_;\n    std::vector<std::unique_ptr<PathfinderBase>> algorithms_;  // [HD-MODERN]\n    std::vector<SearchResult> results_;\n    std::vector<AlgorithmFrame> frames_;\n    int cursor_r_ = 0, cursor_c_ = 0;\n};',
+            iq:'What if you stored algorithms as `std::vector<PathfinderBase>` directly?',
+            ia:'Object slicing — only the base class portion is stored, the BFS/DFS-specific members are sliced off. Polymorphism breaks: every algorithm becomes a generic PathfinderBase. You MUST store pointers (or unique_ptr) to preserve the derived type.',
+            commit:'T18a: declare AlgorithmRunner with unique_ptr ownership'
+           },
+          { id:'t18b', n:'T18b', est:'~40 min',
+            ti:'AlgorithmRunner — run_loop() animation',
+            sb:'Run all algos · pair with frames · advance animation · 28 FPS sleep',
+            tg:['stl','hd'],
+            accept:[
+              'rerun_all(start, goal) calls each algo->run() and times with chrono',
+              'Each result paired with an AlgorithmFrame (animation_step=0 on rerun)',
+              'Loop: poll_input → handle action → advance_animation → draw_frame → sleep(36ms)',
+              'Quit action breaks the loop',
+              'std::this_thread::sleep_for + chrono_literals (using namespace std::chrono_literals)'
+            ],
+            deliverable: 'Runner drives all 4 algorithms animating independently at ~28 FPS',
+            tip:'`using namespace std::chrono_literals;` then `sleep_for(36ms)` reads cleanly. // [HD-MODERN]',
+            co:[
+              {c:'#7c3aed', n:'std::chrono per-algorithm timing [HD-STL]',
+               w:'Wrap each algo->run() with high_resolution_clock::now() before/after. The elapsed_ms goes into the AlgorithmFrame and lights up the stats bar. Concrete evidence of HD timing requirement.'},
+              {c:'#0891b2', n:'animation_step advances independently per frame',
+               w:'Each frame increments its own animation_step. Frames with shorter explored_orders finish first. The visual race is what makes side-by-side animation interesting.'},
+              {c:'#7c3aed', n:'sleep_for(36ms) ≈ 28 FPS',
+               w:'Cheap frame pacing without burning CPU. Configurable via constructor — 100ms is great for TA demos (more dramatic).'}
+            ],
+            code:'// src/runner.cpp\n#include "runner.h"\n#include <chrono>\n#include <thread>\n#include <algorithm>\n\nusing namespace std::chrono_literals;  // [HD-MODERN]\n\nvoid AlgorithmRunner::run_loop(int start, int goal, int step_ms) {\n    rerun_all(start, goal);\n    while (true) {\n        auto a = renderer_.poll_input();\n        if (a == InputAction::Quit) break;\n        handle_action(a, start, goal);\n        advance_animation();\n        renderer_.draw_frame(grid_, start, goal, frames_, cursor_r_, cursor_c_);\n        std::this_thread::sleep_for(std::chrono::milliseconds(step_ms));\n    }\n}\n\nvoid AlgorithmRunner::rerun_all(int start, int goal) {\n    results_.clear(); frames_.clear();\n    for (auto& algo : algorithms_) {\n        auto t0 = std::chrono::high_resolution_clock::now();\n        results_.push_back(algo->run(grid_, start, goal));\n        auto t1 = std::chrono::high_resolution_clock::now();\n        AlgorithmFrame f;\n        f.name = algo->name();\n        f.result = &results_.back();\n        f.animation_step = 0;\n        f.elapsed_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();\n        frames_.push_back(f);\n    }\n}',
+            iq:'Why call rerun_all() before the main loop?',
+            ia:'The user expects to see paths IMMEDIATELY on launch — not "press R first, then see something". The initial pass on the empty grid means the four panels are populated when the app boots. The demo does this too (added in the recent refactor).',
+            commit:'T18b: implement run_loop() + rerun_all() with chrono timing'
+          },
+          { id:'t18c', n:'T18c', est:'~30 min',
+            ti:'AlgorithmRunner — handle_action() + cursor + walls',
+            sb:'WASD moves cursor · SPACE toggles wall · R reruns · G generates maze',
+            tg:['ui','hd'],
+            accept:[
+              'MoveUp/Down/Left/Right adjust cursor with bounds clamping',
+              'ToggleWall flips current tile WALL ↔ EMPTY, calls grid_.setTile()',
+              'Run triggers rerun_all() (resets animation_step too)',
+              'GenerateMaze + Reset both eventually rerun_all',
+              'Cursor wraps cleanly inside grid bounds (no out-of-bounds writes)'
+            ],
+            deliverable: 'Interactive editor that re-runs all 4 algorithms on every wall toggle',
+            tip:'Re-running on every edit is fine on a 21×21 — it\'s sub-millisecond. Don\'t add debouncing; correctness > performance here.',
+            co:[
+              {c:'#0891b2', n:'Cursor as Runner state, not Renderer state',
+               w:'The cursor is part of the editing model — survives between renders. The Renderer just displays it. If the Renderer owned cursor state, it would survive renderer swaps (ncurses → Raylib), which is wrong.'},
+              {c:'#0891b2', n:'Toggle wall via setTile() — not direct nodes[][] mutation',
+               w:'setTile() rebuilds adjacency. Direct mutation would leave stale edges → BFS finds paths through walls. Always go through setTile.'}
+            ],
+            code:'// src/runner.cpp\nvoid AlgorithmRunner::handle_action(InputAction a, int start, int goal) {\n    switch (a) {\n        case InputAction::MoveUp:    cursor_r_ = std::max(0, cursor_r_ - 1); break;\n        case InputAction::MoveDown:  cursor_r_ = std::min(grid_.rows-1, cursor_r_+1); break;\n        case InputAction::MoveLeft:  cursor_c_ = std::max(0, cursor_c_ - 1); break;\n        case InputAction::MoveRight: cursor_c_ = std::min(grid_.cols-1, cursor_c_+1); break;\n        case InputAction::ToggleWall: {\n            auto t = grid_.nodes[cursor_r_][cursor_c_].type;\n            grid_.setTile(cursor_r_, cursor_c_,\n                t == TileType::WALL ? TileType::EMPTY : TileType::WALL);\n            rerun_all(start, goal);\n            break;\n        }\n        case InputAction::Run:          rerun_all(start, goal); break;\n        case InputAction::GenerateMaze: /* phase 5 */            break;\n        case InputAction::Reset: {\n            for (int r = 0; r < grid_.rows; ++r)\n                for (int c = 0; c < grid_.cols; ++c)\n                    grid_.setTile(r, c, TileType::EMPTY);\n            rerun_all(start, goal);\n            break;\n        }\n        default: break;\n    }\n}',
+            iq:'Why does ToggleWall trigger a full rerun_all() instead of incrementally updating each algorithm?',
+            ia:'Algorithms are stateless — they don\'t support incremental updates. Re-running is the simplest correct behaviour, and on a 21×21 grid it\'s sub-millisecond per algorithm. Premature optimisation toward incremental search would balloon complexity for zero user-visible benefit.',
+            commit:'T18c: implement handle_action() — cursor, wall toggle, reset, run'
+          }
+        ]
+      },
+      {
+        id: 's4d', name: 'TA check-in #3', kind: 'ta',
+        tasks: [
+          { id:'t19', n:'T19', est:'TA session',
+            ti:'TA check-in #3 — Phase 4 live demo + OnTrack log',
+            sb:'4-panel animation · interactive editing · stats bar · OnTrack mark',
+            tg:['ta'],
+            accept:[
+              'Live run: launch ./pathfinder, paint walls with WASD+SPACE',
+              'Press R, watch all 4 algorithms animate side-by-side',
+              'Point to stats bar — explored counts, costs, ms',
+              'TA marks Phase 4 complete on OnTrack'
+            ],
+            deliverable: 'OnTrack record + the most impressive demo of the project',
+            tip:'Slow step_ms to 100 for the TA demo — the frontier expansion becomes hypnotic.  // [HD checkpoint #3]',
+            co:[
+              {c:'#dc2626', n:'What to show',
+               w:'Launch app. WASD to move cursor. SPACE to paint walls. Press R. Watch 4 panels animate. Read stats bar.'},
+              {c:'#dc2626', n:'What to say',
+               w:'"AlgorithmRunner owns a vector of unique_ptr<PathfinderBase>. It calls algo->run() on each — virtual dispatch picks the right subclass. The Renderer is held via reference — Runner has no idea whether it\'s ncurses or Raylib. Open/closed."'},
+              {c:'#dc2626', n:'Likely TA questions',
+               w:'Q: How does side-by-side layout work? A: Each panel has a column offset; draw_panel(panel_col) handles positioning. \\nQ: Why unique_ptr? A: RAII — algorithms auto-delete on Runner destruction with the correct virtual destructor invoked.'}
+            ],
+            code:'// Phase 4 demo entry — main.cpp\nGridGraph g(21, 21);\nNcursesRenderer renderer;\nrenderer.init();\nAlgorithmRunner runner(g, renderer);\nrunner.add_algorithm(std::make_unique<BFS>());\nrunner.add_algorithm(std::make_unique<DFS>());\nrunner.add_algorithm(std::make_unique<Dijkstra>());\nrunner.add_algorithm(std::make_unique<AStar>());\nrunner.run_loop(g.toIndex(0,0), g.toIndex(20,20), 100);  // 100ms = TA-friendly\nrenderer.shutdown();',
+            iq:'Why store PathfinderBase* (or unique_ptr) in a vector rather than four named members?',
+            ia:'A vector lets you iterate uniformly. Adding a fifth algorithm becomes a one-line add_algorithm(). Four named members would require four hand-written calls. The vector is what makes the code extensible — exactly what the HD criterion rewards.',
+            commit:'T19: TA check-in #3 — Phase 4 confirmed on OnTrack'
+          }
+        ]
+      }
+    ]
+  },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PHASE 5 — V2 + HD SUBMISSION
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'p5',
+    label: 'PHASE 5 — V2 polish + HD submission',
+    sub: 'RaylibRenderer · MazeGenerator (mt19937) · README · architecture diagram · demo video · HD interview',
+    color: '#dc2626',
+    summary: 'The polish phase. Raylib backend proves the polymorphism abstraction (same Runner, different visuals). MazeGenerator + mt19937 satisfies [HD-RNG]. Documentation + video lock down the submission. HD interview is the gate.',
+    deliverable: 'OnTrack submission complete: concatenated source file, H2 PDF with diagrams, ≤3 min demo video, HD interview booked.',
+    stages: [
+      {
+        id: 's5a', name: 'Raylib backend', kind: 'build',
+        tasks: [
+          { id:'t20', n:'T20', est:'~60 min',
+            ti:'RaylibRenderer — same interface, different backend',
+            sb:'Gated by USE_RAYLIB · proves polymorphism · 2×2 panel layout',
+            tg:['ui','hd','oop'],
+            accept:[
+              'Header gated by `#ifdef USE_RAYLIB`',
+              'init() calls InitWindow + SetTargetFPS(30)',
+              'draw_frame() uses DrawRectangle/DrawText, NOT mvaddch',
+              'CELL_PX = 28 constant; tiles are 28×28 px rectangles',
+              'AlgorithmRunner runs unchanged when renderer swaps from ncurses → Raylib'
+            ],
+            deliverable: '`make raylib && ./pathfinder_rl` shows the same 4-panel grid in a window',
+            tip:'Only start AFTER ncurses MVP is fully working. Raylib is additive — adds polish without touching Graph, algorithms, or Runner.',
+            co:[
+              {c:'#dc2626', n:'Same Renderer interface, different backend',
+               w:'RaylibRenderer::draw_frame() uses DrawRectangle() + DrawText() instead of mvaddch(). Graph, BFS, Dijkstra, Runner are untouched — proof the abstraction works.'},
+              {c:'#dc2626', n:'BeginDrawing / EndDrawing per frame',
+               w:'Raylib\'s standard frame loop. The Runner\'s sleep_for already paces frames; SetTargetFPS(30) is a hint for Raylib\'s internal timing.'},
+              {c:'#dc2626', n:'#ifdef USE_RAYLIB everywhere',
+               w:'Header AND source file gated. Without it, building on a system without raylib installed fails at compile time. With it, the file is a no-op when USE_RAYLIB is off — clean conditional compilation.'}
+            ],
+            code:'// include/raylib_renderer.h  (gated by USE_RAYLIB)\n#pragma once\n#ifdef USE_RAYLIB\n#include "renderer.h"\n#include <raylib.h>\n\nclass RaylibRenderer : public Renderer {\npublic:\n    static constexpr int CELL_PX = 28;\n    void init() override {\n        InitWindow(1280, 720, "PathFinder");\n        SetTargetFPS(30);\n    }\n    void shutdown() override { CloseWindow(); }\n    void draw_frame(const GridGraph& g, int s, int gl,\n                    const std::vector<AlgorithmFrame>& frames,\n                    int cur_r, int cur_c) override;\n    InputAction poll_input() override;\n};\n#endif',
+            iq:'What does it prove that you can swap NcursesRenderer for RaylibRenderer without touching AlgorithmRunner?',
+            ia:'The Renderer abstraction is correct. Both classes implement the same pure-virtual interface. Runner holds a Renderer& and calls virtual methods. C++ dispatches to whichever concrete class was constructed — that\'s the open/closed principle made physical, not theoretical.',
+            commit:'T20: implement RaylibRenderer behind USE_RAYLIB build flag'
+          }
+        ]
+      },
+      {
+        id: 's5b', name: 'MazeGenerator + RNG', kind: 'build',
+        tasks: [
+          { id:'t21a', n:'T21a', est:'~25 min',
+            ti:'MazeGenerator — header + mt19937 setup',
+            sb:'Class shell · seed-from-random_device · seed accessor for shutdown dump',
+            tg:['stl','rng'],
+            accept:[
+              'class MazeGenerator declared',
+              'std::mt19937 rng_ as member [HD-RNG]',
+              'Constructor takes std::uint32_t seed (default = std::random_device entropy)',
+              'std::uint32_t seed() const accessor',
+              'generate(GridGraph&) declared'
+            ],
+            deliverable: 'Header that compiles + a seed dump on shutdown',
+            tip:'Spike mt19937 in test_stl.cpp first. Confirm SAME seed = SAME maze before integrating.',
+            co:[
+              {c:'#7c3aed', n:'std::mt19937 — Mersenne Twister [HD-RNG]',
+               w:'High-quality PRNG from <random>. Period 2^19937 - 1. Reproducible with a fixed seed. NOT taught in FIT1045 — that\'s exactly why using it satisfies [HD-RNG].'},
+              {c:'#7c3aed', n:'std::random_device for the seed',
+               w:'Hardware-based entropy source (when available). Use it ONCE to seed mt19937; never use random_device directly for the maze (slow, possibly non-deterministic).'}
+            ],
+            code:'// include/maze_generator.h\n#pragma once\n#include "graph.h"\n#include <random>\n#include <cstdint>\n\nclass MazeGenerator {\npublic:\n    explicit MazeGenerator(std::uint32_t seed = 42)\n        : rng_(seed), seed_(seed) {}\n\n    void generate(GridGraph& g);\n    std::uint32_t seed() const { return seed_; }\n\nprivate:\n    std::mt19937 rng_;          // [HD-RNG]\n    std::uint32_t seed_;\n    void carve(GridGraph& g, std::vector<std::vector<bool>>& visited, int r, int c);\n    void scatter_terrain(GridGraph& g);\n};',
+            iq:'What is std::mt19937 and why is it strictly better than rand()?',
+            ia:'mt19937 is a Mersenne Twister with period 2^19937-1, statistically uniform, and reproducible from a seed. rand() has implementation-defined quality (often a 32k period on Windows), poor distribution, and is not portable. mt19937 is the modern C++ standard and is outside the FIT1045 syllabus — explicit HD-RNG criterion.',
+            commit:'T21a: declare MazeGenerator + mt19937 + seed accessor'
+          },
+          { id:'t21b', n:'T21b', est:'~50 min',
+            ti:'MazeGenerator — recursive backtracker + terrain scatter',
+            sb:'Carve passages with std::shuffle · scatter mud/grass/water uniformly',
+            tg:['rng','stl','hd'],
+            accept:[
+              'Fill grid with WALL via grid.setTile loop',
+              'carve(r,c) shuffles 4 directions with std::shuffle, recurses on 2-step strides',
+              'After carving: force start corner (0,0)/(1,0)/(1,1) empty; force goal corner empty',
+              'scatter_terrain uses std::uniform_int_distribution<>(1,100); 10% WATER, 15% MUD, 25% GRASS, else EMPTY',
+              'Same seed produces same maze across runs (proven via printout)'
+            ],
+            deliverable: 'Pressing G in the running app generates a fresh seeded maze with terrain',
+            tip:'Test reproducibility BEFORE wiring into the runner. Seed=42, generate, print walls/terrain. Run again. Should be identical.',
+            co:[
+              {c:'#7c3aed', n:'std::shuffle for direction randomisation [HD-STL]',
+               w:'`std::shuffle(dirs.begin(), dirs.end(), rng_)` randomises the 4 cardinal directions. Different shuffles produce topologically different mazes.'},
+              {c:'#7c3aed', n:'Recursive backtracker',
+               w:'Stand at (1,1). Mark visited. Shuffle. For each direction with stride 2: knock down wall between, recurse. Backtrack when blocked. Generates a perfect maze (one path between any two cells).'},
+              {c:'#7c3aed', n:'Terrain scatter — std::uniform_int_distribution [HD-RNG]',
+               w:'After carving, walk every empty cell. Roll 1-100. Result: a maze with weighted terrain → Dijkstra/A* now have something to optimise around.'}
+            ],
+            code:'// src/maze_generator.cpp\n#include "maze_generator.h"\n#include <algorithm>\n#include <array>\n\nvoid MazeGenerator::generate(GridGraph& g) {\n    for (int r = 0; r < g.rows; ++r)\n        for (int c = 0; c < g.cols; ++c)\n            g.setTile(r, c, TileType::WALL);\n\n    std::vector<std::vector<bool>> visited(g.rows, std::vector<bool>(g.cols, false));\n    g.setTile(1, 1, TileType::EMPTY);\n    carve(g, visited, 1, 1);\n\n    g.setTile(0, 0, TileType::EMPTY); g.setTile(1, 0, TileType::EMPTY);\n    g.setTile(g.rows-1, g.cols-1, TileType::EMPTY);\n    g.setTile(g.rows-1, g.cols-2, TileType::EMPTY);\n    g.setTile(g.rows-2, g.cols-1, TileType::EMPTY);\n\n    scatter_terrain(g);\n}\n\nvoid MazeGenerator::carve(GridGraph& g, std::vector<std::vector<bool>>& visited,\n                          int r, int c) {\n    visited[r][c] = true;\n    std::array<int, 4> order = {0, 1, 2, 3};\n    std::shuffle(order.begin(), order.end(), rng_);  // [HD-STL]\n    const int dr[] = {-2, 2, 0, 0};\n    const int dc[] = {0, 0, -2, 2};\n    for (int idx : order) {\n        int nr = r + dr[idx], nc = c + dc[idx];\n        if (nr <= 0 || nr >= g.rows-1 || nc <= 0 || nc >= g.cols-1) continue;\n        if (visited[nr][nc]) continue;\n        g.setTile((r+nr)/2, (c+nc)/2, TileType::EMPTY);\n        g.setTile(nr, nc, TileType::EMPTY);\n        carve(g, visited, nr, nc);\n    }\n}\n\nvoid MazeGenerator::scatter_terrain(GridGraph& g) {\n    std::uniform_int_distribution<int> roll(1, 100);  // [HD-RNG]\n    for (int r = 0; r < g.rows; ++r)\n        for (int c = 0; c < g.cols; ++c) {\n            if (g.nodes[r][c].type != TileType::EMPTY) continue;\n            if ((r == 0 && c == 0) || (r == g.rows-1 && c == g.cols-1)) continue;\n            int x = roll(rng_);\n            if      (x <= 10) g.setTile(r, c, TileType::WATER);\n            else if (x <= 25) g.setTile(r, c, TileType::MUD);\n            else if (x <= 50) g.setTile(r, c, TileType::GRASS);\n        }\n}',
+            iq:'Why use std::shuffle on a 4-element array instead of just generating 4 random ints?',
+            ia:'std::shuffle guarantees a uniform random permutation — every direction-order is equally likely. Generating 4 random ints (and rejecting duplicates) is biased and slow. Shuffle is O(n) with no rejection sampling. Always use the right tool.',
+            commit:'T21b: implement MazeGenerator with recursive backtracker + scatter'
+          }
+        ]
+      },
+      {
+        id: 's5c', name: 'Documentation', kind: 'build',
+        tasks: [
+          { id:'t22a', n:'T22a', est:'~35 min',
+            ti:'README.md — architecture + build + HD criteria table',
+            sb:'Written for experienced programmers · architecture diagram inline · HD evidence map',
+            tg:['doc','bld'],
+            accept:[
+              'Architecture section with 4-layer diagram',
+              'Build commands: `make` and `make raylib`',
+              'HD criteria table: HD-OOP, HD-STL, HD-RNG, HD-MODERN, HD-FEATURE, HD-TERRAIN',
+              'Each criterion cites the exact file/class that satisfies it',
+              'Controls section with WASD/SPACE/R/G/C/Q reference'
+            ],
+            deliverable: '`README.md` clones-and-builds in <5 minutes for a TA',
+            tip:'The H2 brief explicitly asks for this. No bullet skipped — re-read the brief side-by-side as you write.',
+            co:[
+              {c:'#e11d48', n:'HD criteria alignment table — your insurance policy',
+               w:'Map each HD criterion to the exact file/class. Self-documenting submission. The TA reads this in 30 seconds and knows where to find the evidence.'},
+              {c:'#e11d48', n:'Build instructions — exact commands',
+               w:'List required libs: libncurses-dev (apt) / ncurses (brew); raylib >= 4.0 (brew install raylib). A TA should be able to clone and build in under 5 minutes.'}
+            ],
+            code:'# PathFinder\n\nTerminal pathfinding visualiser — BFS, DFS, Dijkstra, A* on a\nweighted 21×21 grid with ncurses animation and an optional Raylib V2 backend.\n\n## Build\n\n    make            # MVP — needs ncurses\n    make raylib     # V2  — needs raylib >= 4.0\n\n## Architecture\n\n    Layer 1 (data):       Node · Edge · GridGraph                  graph.{h,cpp}\n    Layer 2 (algorithms): PathfinderBase + BFS/DFS/Dijkstra/A*     *.{h,cpp}\n    Layer 3 (orchestration): AlgorithmRunner                       runner.{h,cpp}\n    Layer 4 (presentation): Renderer + Ncurses/RaylibRenderer      *.{h,cpp}\n    Utility: MazeGenerator (mt19937 seeded)                        maze_generator.{h,cpp}\n\n## HD criteria\n\n| Criterion | Satisfied by                                                  |\n|-----------|---------------------------------------------------------------|\n| HD-OOP    | PathfinderBase + Renderer pure-virtual interfaces             |\n| HD-STL    | priority_queue<greater<>>, unordered_map, chrono in dijkstra  |\n| HD-RNG    | std::mt19937 + std::shuffle in maze_generator                 |\n| HD-MODERN | unique_ptr ownership in AlgorithmRunner                       |\n| HD-FEATURE| side-by-side 4-panel animation + interactive editing          |\n| HD-TERRAIN| weighted tile costs (1/3/5/8) drive Dijkstra/A* divergence    |\n\n## Controls\n\n    WASD / arrows  move cursor\n    SPACE          toggle wall under cursor\n    R              rerun all algorithms\n    G              generate seeded maze\n    C              clear grid\n    Q / ESC        quit',
+            iq:'Why does architecture documentation matter for the HD grade?',
+            ia:'The H2 brief explicitly requires you to communicate the model. Writing a clear README forces you to articulate the layered design — and the act of articulation confirms (to you and the assessor) that you actually understand it.',
+            commit:'T22a: write README with architecture + build + HD criteria table'
+          },
+          { id:'t22b', n:'T22b', est:'~50 min',
+            ti:'Architecture diagram (SVG)',
+            sb:'4-layer diagram with inheritance arrows · Excalidraw or Figma · embedded in H2 PDF',
+            tg:['doc'],
+            accept:[
+              'SVG file at docs/architecture.svg',
+              'Shows 4 layers with inheritance arrows',
+              'Each layer labelled (data/algo/runner/presentation)',
+              'Concrete classes shown: BFS/DFS/Dijkstra/AStar inherit PathfinderBase',
+              'Embedded in H2 PDF as vector image (scales without blur)'
+            ],
+            deliverable: 'docs/architecture.svg + page 2 of the H2 PDF',
+            tip:'Sketch by hand first, then redraw clean. Arrows must show dependency direction — higher layers depend on lower, never the reverse.',
+            co:[
+              {c:'#e11d48', n:'Show what each layer does NOT include',
+               w:'graph.h has no #include for any algorithm. pathfinder_base.h has no #include for any renderer. runner.h includes both — that\'s the only place dependencies converge.'},
+              {c:'#e11d48', n:'Embed in H2 PDF as a vector image',
+               w:'PNG works; SVG is better (scales without blur). The H2 brief explicitly asks for diagrams.'}
+            ],
+            code:'// architecture diagram (text representation in docs/architecture.txt)\n//\n//  ┌─────────────────────────────────────────────┐\n//  │ LAYER 1 · DATA                               │\n//  │   Node · Edge · GridGraph                    │\n//  └─────────────────────────────────────────────┘\n//                       ▲ used by\n//  ┌─────────────────────────────────────────────┐\n//  │ LAYER 2 · ALGORITHMS                         │\n//  │   PathfinderBase                              │\n//  │     ▲                                         │\n//  │     ├── BFS   (std::queue)                   │\n//  │     ├── DFS   (std::stack)                   │\n//  │     ├── Dijkstra (priority_queue<greater<>>) │\n//  │     └── AStar    (Dijkstra + Manhattan h)    │\n//  └─────────────────────────────────────────────┘\n//                       ▲ orchestrated by\n//  ┌─────────────────────────────────────────────┐\n//  │ LAYER 3 · RUNNER                             │\n//  │   AlgorithmRunner                            │\n//  │     ├── owns vector<unique_ptr<Pathfinder*>> │\n//  │     └── borrows Renderer&                    │\n//  └─────────────────────────────────────────────┘\n//                       ▲ rendered via\n//  ┌─────────────────────────────────────────────┐\n//  │ LAYER 4 · PRESENTATION                       │\n//  │   Renderer (abstract)                        │\n//  │     ▲                                         │\n//  │     ├── NcursesRenderer (MVP)                │\n//  │     └── RaylibRenderer  (V2, gated)          │\n//  └─────────────────────────────────────────────┘',
+            iq:'What does the dependency direction tell the assessor about your design?',
+            ia:'Higher layers depend on lower layers, never the reverse. graph.h has zero algorithm or renderer #includes. You can swap the renderer without touching a single algorithm file. That\'s good architecture — the diagram makes it visible in two seconds.',
+            commit:'T22b: add docs/architecture.svg + diagram source'
+          }
+        ]
+      },
+      {
+        id: 's5d', name: 'Submission package', kind: 'build',
+        tasks: [
+          { id:'t23', n:'T23', est:'~40 min',
+            ti:'Concatenate all source files for OnTrack',
+            sb:'scripts/concat.sh produces all_code.cpp · verifies clean compile from concat',
+            tg:['bld'],
+            accept:[
+              'scripts/concat.sh script written (executable)',
+              'Output: all_code.cpp with all files in correct include order',
+              'Compiles cleanly: `clang++ -std=c++17 -Wall -Wextra all_code.cpp -lncurses`',
+              'Zero warnings on the concatenated build',
+              'Saved file under 2000 lines (sanity check the bound)'
+            ],
+            deliverable: '`all_code.cpp` ready for OnTrack upload',
+            tip:'Run the concat script from a CLEAN checkout, then verify it compiles. If a #pragma once collision surfaces, the script ordering is wrong — fix BEFORE submitting.',
+            co:[
+              {c:'#16a34a', n:'H2 requirement: one concatenated file submitted',
+               w:'The brief is explicit. Without this file you are not eligible for HD. Do not submit only a repo link.'},
+              {c:'#16a34a', n:'Order: headers first, then implementations, then main',
+               w:'graph.h → pathfinder_base.h → bfs.h → bfs.cpp → ... → main.cpp. Must compile end-to-end.'}
+            ],
+            code:'#!/usr/bin/env bash\n# scripts/concat.sh\nset -euo pipefail\nOUT="all_code.cpp"\nFILES=(\n  include/graph.h           src/graph.cpp\n  include/pathfinder_base.h\n  include/bfs.h             src/bfs.cpp\n  include/dfs.h             src/dfs.cpp\n  include/dijkstra.h        src/dijkstra.cpp\n  include/astar.h           src/astar.cpp\n  include/maze_generator.h  src/maze_generator.cpp\n  include/renderer.h\n  include/ncurses_renderer.h src/ncurses_renderer.cpp\n  include/runner.h          src/runner.cpp\n  main.cpp\n)\n: > "$OUT"\nfor f in "${FILES[@]}"; do\n  printf "// ===== %s =====\\n" "$f" >> "$OUT"\n  cat "$f" >> "$OUT"\n  printf "\\n" >> "$OUT"\ndone\nclang++ -std=c++17 -Wall -Wextra -Iinclude "$OUT" -lncurses -o /tmp/concat_test \\\n  && echo "✓ concat compiles" || (echo "✗ concat failed"; exit 1)',
+            iq:'Why does the H2 brief require a concatenated file rather than just a GitHub link?',
+            ia:'The concatenated file is rendered to PDF for the assessor to scan, annotate, and archive. It locks in the submitted code at submission time — the repo can keep evolving without affecting the marked snapshot. Also a forcing function: if you can\'t make a clean concatenated build, your include structure has a bug.',
+            commit:'T23: add scripts/concat.sh + verify clean compile from all_code.cpp'
+          },
+          { id:'t24', n:'T24', est:'~50 min',
+            ti:'Demo video — script + record + upload',
+            sb:'≤3 min screencast · YouTube/Panopto public link · script every second',
+            tg:['doc','bld'],
+            accept:[
+              'Script written: 30s architecture + 60s 4-panel run + 30s terrain divergence + 30s maze + 10s Raylib + 10s zero-warning build',
+              'Recorded with clear narration',
+              'Uploaded to YouTube/Panopto with PUBLIC link',
+              'Tested public link in incognito (no Monash auth required)',
+              'Link added to README + H2 PDF'
+            ],
+            deliverable: 'Public video URL ready for OnTrack submission',
+            tip:'Hard cap: 3 minutes. Cut ruthlessly. Open with the side-by-side 4-panel animation — that\'s your strongest hook.',
+            co:[
+              {c:'#e11d48', n:'Star moments: 4-panel race + terrain divergence',
+               w:'(1) All four frontiers expanding simultaneously. (2) BFS taking the mud route while Dijkstra goes around. These are the two HD-grade moments.'},
+              {c:'#e11d48', n:'Narrate architecture in two sentences',
+               w:'"Four layers: data, algorithms, runner, presentation. The Runner holds unique_ptrs to all four PathfinderBase subclasses and a Renderer reference — it never knows which concrete types it has." That\'s your elevator pitch.'}
+            ],
+            code:'// demo_script.md — minute-by-minute breakdown\n// 0:00 — title card + architecture diagram (15s)\n// 0:15 — launch ./pathfinder, draw walls + mud + water with cursor (45s)\n// 1:00 — press R, watch 4-panel animation (60s)\n//          callout: BFS path goes through mud; Dijkstra goes around\n//          callout: stats bar — explored counts, costs, ms\n// 2:00 — press G, generate seeded maze (15s)\n//          callout: same seed → same maze, mt19937 reproducibility\n// 2:15 — switch to ./pathfinder_rl (Raylib), show V2 (15s)\n// 2:30 — back to terminal: `make` produces zero warnings (15s)\n// 2:45 — closing card: HD criteria table flash (15s)',
+            iq:'What should the first 30 seconds of your demo look like?',
+            ia:'The 4-panel animation. It is the most visually distinctive feature and immediately demonstrates the project is well above a baseline submission. Hook the assessor in the first 30 seconds; explain the architecture afterwards.',
+            commit:'T24: record + upload ≤3-min demo video'
+          },
+          { id:'t25', n:'T25', est:'~55 min',
+            ti:'H2 PDF — architecture, progress, criteria, links',
+            sb:'Re-read H2 brief side-by-side · cover every bullet · embed diagram',
+            tg:['doc'],
+            accept:[
+              'Architecture description with embedded SVG diagram',
+              'Class/struct table',
+              'Progress narrative referencing 3 TA check-ins (T10, T15, T19)',
+              'HD criteria alignment — short paragraph each',
+              'Build instructions',
+              'Demo video link + code repo link'
+            ],
+            deliverable: 'docs/h2_submission.pdf — 4-6 pages, ready for OnTrack',
+            tip:'Each bullet point in the H2 brief becomes a section heading. No bullet skipped.',
+            co:[
+              {c:'#e11d48', n:'Progress narrative — idea → prototype → polished',
+               w:'Reference your TA check-ins. Show how the architecture evolved. The brief wants evidence of iterative development, not a one-shot reveal.'},
+              {c:'#e11d48', n:'HD criteria alignment — short paragraph each',
+               w:'HD-OOP, HD-STL, HD-RNG, HD-MODERN, HD-FEATURE, HD-TERRAIN. For each: 2-3 sentences citing the exact file and class. No vague claims.'}
+            ],
+            code:'// H2 PDF outline\n// 1. Project overview (1 paragraph)\n// 2. Architecture description\n//    2.1 Diagram (from T22b)\n//    2.2 Class/struct table\n//    2.3 Layer responsibilities\n// 3. How it works\n// 4. Progress narrative (T10, T15, T19 referenced)\n// 5. HD criteria alignment\n// 6. Build instructions\n// 7. Demo video link\n// 8. Source code link (Monash Drive)',
+            iq:'What is the single most important thing the H2 PDF must demonstrate?',
+            ia:'That you designed and own the architecture. The brief warns against "gluing libraries". Your PDF must show the Graph/Algorithm/Runner/Renderer layers as YOUR design — STL and ncurses/Raylib used as tools in service of that design, not as substitutes for it.',
+            commit:'T25: write H2 PDF with diagram + criteria + progress + links'
+          }
+        ]
+      },
+      {
+        id: 's5e', name: 'Final TA check-in + HD interview', kind: 'ta',
+        tasks: [
+          { id:'t26', n:'T26', est:'TA session',
+            ti:'TA check-in #4 — final review',
+            sb:'Walk complete project · video + PDF + code · OnTrack final mark',
+            tg:['ta'],
+            accept:[
+              'Demo video pre-loaded in browser tab',
+              'H2 PDF open in second tab',
+              'all_code.cpp open in third tab as evidence',
+              'Live ./pathfinder in terminal',
+              'TA marks Phase 5 / final on OnTrack'
+            ],
+            deliverable: 'OnTrack TA check-in #4 closed; HD interview booked',
+            tip:'Dress rehearsal. Walk the TA through your video AND the live demo AND the PDF — all three.  // [HD checkpoint #4]',
+            co:[
+              {c:'#dc2626', n:'What to show',
+               w:'Run full demo from video script. Open H2 PDF, scroll to HD criteria table. Open all_code.cpp briefly to demonstrate concat exists.'},
+              {c:'#dc2626', n:'What to say',
+               w:'"All 6 HD criteria met. Architecture is 4 layers. priority_queue with greater<> drives Dijkstra. mt19937 seeds the maze. unique_ptr owns the algorithms. The 4-panel animation is the headline feature. The mud band proves Dijkstra ≠ BFS on weighted terrain."'},
+              {c:'#dc2626', n:'Be ready for these probes',
+               w:'Renderer polymorphism. priority_queue vs std::set. mt19937 vs rand(). BFS vs Dijkstra on weighted terrain. virtual destructor consequences. unique_ptr over raw pointer.'}
+            ],
+            code:'// final TA demo — tight version\n// 1. make && ./pathfinder — show zero warnings\n// 2. WASD + SPACE — paint walls + mud at cursor\n// 3. R — 4-panel animation, point at stats bar\n// 4. Show terrain divergence (mud band)\n// 5. G — seeded maze, dump seed on exit\n// 6. (optional) make raylib && ./pathfinder_rl — V2 backend\n// 7. Open H2 PDF — HD criteria table\n// 8. Ask TA to confirm check-in on OnTrack',
+            iq:'What will the HD interview assessor focus on most?',
+            ia:'Architecture ownership. Any student can describe what the code does. HD requires you to explain why the design is structured this way — why pure virtual, why priority_queue, why unique_ptr, why the 4-layer split. Prepare a one-sentence "why" for every major design choice.',
+            commit:'T26: TA check-in #4 — final review confirmed on OnTrack'
+          },
+          { id:'t27', n:'T27', est:'OnTrack',
+            ti:'Submit — concat + PDF + video link',
+            sb:'OnTrack final · ≥24h before deadline · screenshot confirmation',
+            tg:['bld','hd'],
+            accept:[
+              'all_code.cpp uploaded to OnTrack',
+              'h2_submission.pdf uploaded',
+              'Demo video link in PDF + OnTrack notes',
+              'Code repo link in PDF (Monash Drive or GitHub)',
+              'Confirmation screen screenshotted with timestamp',
+              'Submitted ≥24h before deadline'
+            ],
+            deliverable: 'OnTrack submission complete + screenshot proof saved',
+            tip:'OnTrack uploads occasionally fail. The 24h buffer is your insurance. Screenshot the confirmation — that is your proof.',
+            co:[
+              {c:'#16a34a', n:'Submission checklist',
+               w:'all_code.cpp + H2 PDF + Video link + Repo link + Confirmation screenshot. Every item or you risk eligibility.'},
+              {c:'#16a34a', n:'Email tutor only if there\'s an issue',
+               w:'No need otherwise — OnTrack is the official channel. If you do email: "Submitted as task X.Y on YYYY-MM-DD at HH:MM, confirmation attached."'}
+            ],
+            code:'// final submission checklist\n// [ ] all_code.cpp built from concat.sh, compiles clean\n// [ ] H2 PDF — diagram, criteria table, links\n// [ ] Demo video uploaded + public link tested in incognito\n// [ ] Code repo link tested in incognito\n// [ ] OnTrack: task uploaded, confirmation screen visible\n// [ ] Confirmation screenshot saved with timestamp\n// [ ] HD interview booked',
+            iq:'Why submit ≥24h before the deadline?',
+            ia:'OnTrack uploads occasionally fail silently or hit transient outages. A 24h buffer means you can resubmit, contact your tutor, or swap to a backup channel without panic. Cheapest insurance you can buy on this project.',
+            commit:'T27: OnTrack submission complete — confirmation saved'
+          },
+          { id:'t28', n:'T28', est:'HD Interview',
+            ti:'HD interview — defend the project',
+            sb:'In-person · ~15-20 min · architecture + design rationale · the gate to HD',
+            tg:['ta','hd'],
+            accept:[
+              'Project pre-launched (./pathfinder + ./pathfinder_rl ready)',
+              'Architecture diagram open in second tab',
+              'Demo video tab loaded',
+              'Cheat-sheet of "why" answers prepared',
+              'HD interview confirmed by assessor on OnTrack'
+            ],
+            deliverable: 'HD grade confirmed — the gate has been passed',
+            tip:'Required for HD. NOT optional. Bring laptop with project pre-running. Be ready to explain ANY line of code on demand.',
+            co:[
+              {c:'#dc2626', n:'Core questions and crisp answers',
+               w:'Q: Why pure virtual run()? A: Forces every algorithm to implement; PathfinderBase non-instantiable. \\nQ: Why priority_queue<greater<>>? A: Min-heap, O(log n) vs O(n) sorted vector. \\nQ: Why mt19937? A: Mersenne Twister, period 2^19937, reproducible — outside FIT1045 syllabus.'},
+              {c:'#dc2626', n:'Show ownership of every line — including the why',
+               w:'"I made tile_cost() inline so algorithms never hardcode terrain values" is ownership. "I copied this from the reference" is NOT.'},
+              {c:'#dc2626', n:'Have the project running BEFORE you walk in',
+               w:'Don\'t waste interview minutes on setup. Pre-launched binaries. Architecture diagram open. Demo tab loaded. Assessor wants to SEE it work, then DISCUSS how it works.'}
+            ],
+            code:'// HD INTERVIEW — quick reference card\n//\n// Q: Why is PathfinderBase abstract?\n// A: Pure virtual run() forces every algorithm to implement.\n//    Cannot instantiate base directly.\n//\n// Q: Why priority_queue with greater<>?\n// A: Default is max-heap; greater<> flips to min-heap.\n//    Dijkstra needs cheapest-first → must be min-heap.\n//\n// Q: Why virtual destructor on Renderer?\n// A: Without it, deleting through Renderer* skips ~NcursesRenderer\n//    and ncurses\' endwin() never fires → terminal corruption.\n//\n// Q: What is mt19937?\n// A: Mersenne Twister, period 2^19937-1, reproducible from seed.\n//    Outside FIT1045 syllabus → HD-RNG criterion.\n//\n// Q: Dijkstra vs BFS on weighted terrain?\n// A: BFS ignores weight → finds fewest hops, possibly through MUD.\n//    Dijkstra relaxes by actual cost → goes around MUD if cheaper.\n//\n// Q: Why unique_ptr<PathfinderBase> in the runner?\n// A: RAII ownership, auto-delete with virtual destructor on chain.\n//    Raw pointer would require manual delete → leak risk.\n//\n// Q: What if you remove the virtual destructor?\n// A: delete unique_ptr<Base> calls only ~Base, leaks subclass\n//    members. UB in standard, almost-certain leak in practice.',
+            iq:'What single thing separates HD from Distinction in the interview?',
+            ia:'Explaining WHY, not just WHAT. Anyone can describe what the code does. HD requires you to explain why the design is structured that way. Prepare a one-sentence "why" for every major design choice. That is the HD bar.',
+            commit:'T28: HD interview complete — final reflection on OnTrack'
+          }
+        ]
+      }
+    ]
+  }
+];
+
+// flatten + state
+var ALL_TASKS = [];
+PHASES.forEach(function(p){ p.stages.forEach(function(s){ s.tasks.forEach(function(t){
+  t._phaseId = p.id; t._stageId = s.id;
+  ALL_TASKS.push(t);
+}); }); });
+var TOTAL = ALL_TASKS.length;
+
+var chk = new Set(PRE_DONE);
+var collapsed = new Set();
+ALL_TASKS.forEach(function(t){ collapsed.add(t.id); });
+var filter = 'all';
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function isHD(t)   { return t.tg.indexOf('hd') !== -1; }
+function isTA(t)   { return t.tg.indexOf('ta') !== -1; }
+function isTodo(t) { return !chk.has(t.id); }
+function isActive(t) {
+  if (chk.has(t.id)) return false;
+  var idx = ALL_TASKS.indexOf(t);
+  if (idx === 0) return true;
+  return chk.has(ALL_TASKS[idx-1].id);
+}
+
+function filterMatch(t) {
+  if (filter === 'all')    return true;
+  if (filter === 'todo')   return isTodo(t);
+  if (filter === 'active') return isActive(t);
+  if (filter === 'hd')     return isHD(t);
+  if (filter === 'ta')     return isTA(t);
+  return true;
+}
+
+function setFilter(f) {
+  filter = f;
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(el){
+    el.classList.toggle('active', el.getAttribute('data-filter') === f);
+  });
+  render();
+}
+
+function upd() {
+  var done = ALL_TASKS.filter(function(t){ return chk.has(t.id); }).length;
+  var pct  = Math.round(done / TOTAL * 100);
+  document.getElementById('vd').textContent     = done;
+  document.getElementById('vtotal').textContent = TOTAL;
+  document.getElementById('vp').textContent     = pct + '%';
+  document.getElementById('pct-r').textContent  = done + ' / ' + TOTAL + ' tasks';
+  document.getElementById('bar').style.width    = pct + '%';
+  var nx = ALL_TASKS.find(function(t){ return !chk.has(t.id); });
+  document.getElementById('vn').textContent = nx ? nx.n : '✓';
+  document.getElementById('vphase').textContent = nx ? nx._phaseId.toUpperCase() : 'DONE';
+
+  document.getElementById('cnt-all').textContent    = ALL_TASKS.length;
+  document.getElementById('cnt-todo').textContent   = ALL_TASKS.filter(isTodo).length;
+  document.getElementById('cnt-active').textContent = ALL_TASKS.filter(isActive).length;
+  document.getElementById('cnt-hd').textContent     = ALL_TASKS.filter(isHD).length;
+  document.getElementById('cnt-ta').textContent     = ALL_TASKS.filter(isTA).length;
+
+  var banner = document.getElementById('done-banner');
+  if (done === TOTAL) banner.classList.add('show'); else banner.classList.remove('show');
+
+  PHASES.forEach(function(p) {
+    var pAll = []; p.stages.forEach(function(s){ s.tasks.forEach(function(t){ pAll.push(t); }); });
+    var pdone = pAll.filter(function(t){ return chk.has(t.id); }).length;
+    var bar   = document.getElementById('pbar-' + p.id);
+    var lbl   = document.getElementById('plbl-' + p.id);
+    if (bar) bar.style.width  = Math.round(pdone / pAll.length * 100) + '%';
+    if (lbl) lbl.textContent  = pdone + ' / ' + pAll.length;
+
+    p.stages.forEach(function(s) {
+      var sdone = s.tasks.filter(function(t){ return chk.has(t.id); }).length;
+      var slbl = document.getElementById('slbl-' + s.id);
+      if (slbl) slbl.textContent = sdone + ' / ' + s.tasks.length;
+    });
+  });
+}
+
+function renderTaskCard(task) {
+  var globalIdx = ALL_TASKS.indexOf(task);
+  var done      = chk.has(task.id);
+  var prevDone  = globalIdx === 0 || chk.has(ALL_TASKS[globalIdx-1].id);
+  var isCurrent = !done && prevDone;
+  var isLocked  = !done && !prevDone;
+  var isClosed  = collapsed.has(task.id);
+
+  var card = document.createElement('div');
+  card.className = 'card'
+    + (done      ? ' faded'  : '')
+    + (isCurrent ? ' active' : '')
+    + (isLocked  ? ' locked' : '')
+    + (isClosed  ? ' cls'    : '');
+  card.id = 'card-' + task.id;
+
+  var tags = task.tg.map(function(t){ return '<span class="tg ' + TM[t] + '">' + TL[t] + '</span>'; }).join('');
+  var concepts = task.co.map(function(c){
+    return '<div class="con">' +
+      '<div class="cdot" style="background:' + c.c + '"></div>' +
+      '<div><div class="cnn">' + esc(c.n) + '</div>' +
+      '<div class="cwy">' + esc(c.w) + '</div></div>' +
+      '</div>';
+  }).join('');
+  var acceptHtml = (task.accept || []).length
+    ? '<div class="accept"><div class="accept-hdr">ACCEPTANCE CRITERIA</div>' +
+      task.accept.map(function(a){ return '<div class="accept-item">' + esc(a) + '</div>'; }).join('') +
+    '</div>'
+    : '';
+  var delivHtml = task.deliverable
+    ? '<div class="deliverable"><strong>→ DELIVERABLE · </strong>' + esc(task.deliverable) + '</div>'
+    : '';
+  var tipHtml = task.tip
+    ? '<div class="tips"><strong>Tip · </strong>' + esc(task.tip) + '</div>'
+    : '';
+  var commitHtml = task.commit
+    ? '<div class="commit-line"><strong>→ next commit · </strong>' + esc(task.commit) + '</div>'
+    : '';
+  var prevTask = globalIdx > 0 ? ALL_TASKS[globalIdx-1] : null;
+  var lockHtml = isLocked && prevTask
+    ? '<div class="lock-msg">Complete ' + esc(prevTask.n) + ' first to unlock.</div>'
+    : '';
+
+  card.innerHTML =
+    '<div class="ch" data-tid="' + task.id + '">' +
+      '<div class="ck-wrap">' +
+        '<input type="checkbox" class="ck" data-tid="' + task.id + '"' +
+        (done ? ' checked' : '') + (isLocked ? ' disabled' : '') + ' />' +
+      '</div>' +
+      '<div class="ci">' +
+        '<div class="cnum">' + esc(task.n) + '</div>' +
+        '<div class="cname' + (done ? ' done' : '') + '">' + esc(task.ti) + '</div>' +
+        '<div class="csub">' + esc(task.sb) + '</div>' +
+        '<div class="ctgs">' + tags + '</div>' +
+      '</div>' +
+      '<div class="card-right">' +
+        '<div class="cvv">&#9660;</div>' +
+        '<div class="est">' + esc(task.est) + '</div>' +
+      '</div>' +
+    '</div>' +
+    (isLocked ? lockHtml : '') +
+    '<div class="cb">' +
+      delivHtml +
+      acceptHtml +
+      '<div class="slbl">CONCEPTS TO LEARN FIRST</div>' +
+      concepts +
+      tipHtml +
+      '<div class="slbl" style="margin-top:14px">CODE SKETCH</div>' +
+      '<div class="code"><span class="code-label">C++17</span>' +
+      esc(task.code) + '</div>' +
+      '<div class="ibox">' +
+        '<div class="ibox-hd">' +
+          '<div class="ibox-icon">?</div>' +
+          '<div class="iq">HD interview · &ldquo;' + esc(task.iq) + '&rdquo;</div>' +
+        '</div>' +
+        '<div class="ia">' + esc(task.ia) + '</div>' +
+      '</div>' +
+      commitHtml +
+    '</div>';
+
+  return card;
+}
+
+function render() {
+  var root = document.getElementById('root');
+  root.innerHTML = '';
+
+  PHASES.forEach(function(phase) {
+    var pTasks = []; phase.stages.forEach(function(s){ s.tasks.forEach(function(t){ pTasks.push(t); }); });
+    var phaseHasMatch = pTasks.some(filterMatch);
+    if (!phaseHasMatch) return;
+
+    var section = document.createElement('div');
+    section.className = 'phase-section';
+
+    var phdr = document.createElement('div');
+    phdr.className = 'phase-hdr';
+    phdr.innerHTML =
+      '<div class="phase-stripe" style="background:' + phase.color + '"></div>' +
+      '<div class="phase-hdr-row">' +
+        '<div style="flex:1; min-width:0;">' +
+          '<div class="phase-title">' + esc(phase.label) + '</div>' +
+          '<div class="phase-sub">' + esc(phase.sub) + '</div>' +
+        '</div>' +
+        '<div class="phase-progress" id="plbl-' + phase.id + '">0 / ' + pTasks.length + '</div>' +
+      '</div>' +
+      '<div class="phase-bar-wrap"><div class="phase-bar" id="pbar-' + phase.id +
+      '" style="background:' + phase.color + '"></div></div>' +
+      '<div class="phase-summary">' + esc(phase.summary) + '</div>' +
+      '<div class="phase-deliv"><strong>↪ deliverable · </strong>' + esc(phase.deliverable) + '</div>';
+    section.appendChild(phdr);
+
+    phase.stages.forEach(function(stage) {
+      var stageMatchTasks = stage.tasks.filter(filterMatch);
+      if (stageMatchTasks.length === 0) return;
+
+      var sblk = document.createElement('div');
+      sblk.className = 'stage-block';
+
+      var shdr = document.createElement('div');
+      shdr.className = 'stage-hdr';
+      shdr.innerHTML =
+        '<span class="stage-kind kind-' + stage.kind + '">' + KIND_LABEL[stage.kind] + '</span>' +
+        '<span class="stage-title">' + esc(stage.name) + '</span>' +
+        '<span class="stage-progress" id="slbl-' + stage.id + '">0 / ' + stage.tasks.length + '</span>';
+      sblk.appendChild(shdr);
+
+      stageMatchTasks.forEach(function(t){ sblk.appendChild(renderTaskCard(t)); });
+      section.appendChild(sblk);
+    });
+
+    root.appendChild(section);
+  });
+
+  // attach listeners
+  Array.prototype.forEach.call(document.querySelectorAll('.ch'), function(el){
+    el.addEventListener('click', function(e){
+      if (e.target.closest('.ck-wrap')) return;
+      var tid = el.getAttribute('data-tid');
+      var card = document.getElementById('card-' + tid);
+      if (card.classList.contains('locked')) return;
+      if (collapsed.has(tid)) collapsed.delete(tid); else collapsed.add(tid);
+      card.classList.toggle('cls');
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.ck'), function(el){
+    el.addEventListener('click', function(e){ e.stopPropagation(); });
+    el.addEventListener('change', function(){
+      var tid = el.getAttribute('data-tid');
+      if (chk.has(tid)) chk.delete(tid); else chk.add(tid);
+      render();
+    });
+  });
+
+  upd();
+}
+
+function resetAll() {
+  if (!window.confirm('Reset all progress to repo state (T1, T2 done)?')) return;
+  chk = new Set(PRE_DONE);
+  ALL_TASKS.forEach(function(t){ collapsed.add(t.id); });
+  render();
+}
+function expandAll()   { ALL_TASKS.forEach(function(t){ collapsed.delete(t.id); }); render(); }
+function collapseAll() { ALL_TASKS.forEach(function(t){ collapsed.add(t.id); }); render(); }
+
+render();
+</script>
+</body>
+</html>

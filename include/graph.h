@@ -1,4 +1,6 @@
 #pragma once
+
+#include <array>
 #include <vector>
 
 enum class TileType {
@@ -11,17 +13,52 @@ enum class TileType {
 int tile_cost(TileType t);
 
 struct Node {
-    int row, col;
-    TileType type;
-    int cost;
+    int row = 0;
+    int col = 0;
+    TileType type = TileType::EMPTY;
+    int cost = 1;
     
     Node(int r, int c, TileType t = TileType::EMPTY);
+}; 
+
+#ifndef PATHFINDER_GRID_SIZE 
+#define PATHFINDER_GRID_SIZE 25
+#endif
+
+static_assert(PATHFINDER_GRID_SIZE % 2 == 1, "Grid size must be odd for maze generation ");
+
+
+class GridGraph {
+    public:
+    static constexpr int WIDTH = PATHFINDER_GRID_SIZE;
+    static constexpr int HEIGHT = PATHFINDER_GRID_SIZE;
+
+    GridGraph();        
+    void clear();       // reset all tiles to EMPTY
+    void clear_walls(); //remove walls
+
+    
+    bool in_bounds(int x, int y) const; //return true if (x, y) is within grid bounds
+    bool passable(int x, int y) const;  //return if (x, y) in_bounds and not a wall
+
+    //Return a pointer to the Node at (x, y), or nullptr if it is not bounds
+    Node*       get_node(int x, int y);
+    const Node* get_node(int x, int y) const;
+
+    //Change a tile's type and update its cost field to match.
+    void set_title(int x, int y, TileType type);
+
+    //Returns up to 4 passable neighbors 
+    // Primary navigation for 4 algorithms
+    std::vector<Node*> get_neighbors(int x, int y);
+
+    Node*       start();
+    Node*       goal();
+    const Node* start() const;
+    const Node* goal()  const;
+
+    private:
+    std::array<std::array<Node, WIDTH>, HEIGHT> tiles_;
 };
 
-struct Edge {
-    int to;
-    int weight;
-};
-
-
-
+int path_cost(const std::vector<Node*>& path);

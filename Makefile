@@ -1,52 +1,44 @@
-CXX      = clang++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude
-SRC      = $(wildcard src/*.cpp)
-OBJ      = $(SRC:.cpp=.o)
-TARGET   = pathfinder
+CXX        := clang++
+CXXFLAGS   := -std=c++17 -Wall -Wextra -Iinclude -O2
+LDFLAGS_NC := -lncurses
 
-all: $(TARGET)
+NCURSES_GRID := -DPATHFINDER_GRID_SIZE=25
+RAYLIB_GRID  := -DPATHFINDER_GRID_SIZE=31
 
-$(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  BREW_PREFIX   := $(shell brew --prefix 2>/dev/null)
+  RAYLIB_CFLAGS := $(if $(BREW_PREFIX),-I$(BREW_PREFIX)/include)
+  RAYLIB_LDFLAGS := $(if $(BREW_PREFIX),-L$(BREW_PREFIX)/lib)
+  LDFLAGS_RL    := $(RAYLIB_LDFLAGS) -lraylib -lncurses -framework OpenGL -framework Cocoa -framework IOKit
+else
+  RAYLIB_CFLAGS :=
+  LDFLAGS_RL    := -lraylib -lncurses
+endif
 
-src/%.o: src/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+SRCS    := $(wildcard src/*.cpp) main.cpp
+OBJS_NC := $(SRCS:.cpp=.o)
+OBJS_RL := $(SRCS:.cpp=.rl.o)
+
+BIN_NC   := pathfinder
+BIN_RL   := pathfinder_raylib
+
+all: $(BIN_NC)
+
+$(BIN_NC): $(OBJS_NC)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS_NC)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(NCURSES_GRID) -c $< -o $@
+
+raylib: $(BIN_RL)
+
+$(BIN_RL): $(OBJS_RL)
+	$(CXX) $(CXXFLAGS) -DUSE_RAYLIB -o $@ $^ $(LDFLAGS_RL)
+
+%.rl.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(RAYLIB_CFLAGS) -DUSE_RAYLIB $(RAYLIB_GRID) -c $< -o $@
 
 clean:
-	rm -f src/*.o $(TARGET)
+	rm -f $(OBJS_NC) $(OBJS_RL) $(BIN_NC) $(BIN_RL)
 
-.PHONY: all clean
-
-
-# # Makefile — PathfinderXP
-
-# CXX      := clang++
-# CXXFLAGS := -std=c++17 -Wall -Iinclude
-
-
-# SRCS := src/graph.cpp \
-#         src/bfs.cpp \
-#         src/dfs.cpp \
-#         src/dijkstra.cpp \
-#         src/astar.cpp \
-#         src/maze_generator.cpp \
-#         src/runner.cpp
-
-
-# # NCURSES_SRCS := $(SRCS) src/ncurses_renderer.cpp main.cpp
-# # NCURSES_OUT  := pathfinder
-
-# # ncurses: $(NCURSES_SRCS)
-# # 	$(CXX) $(CXXFLAGS) -o $(NCURSES_OUT) $(NCURSES_SRCS) -lncurses
-
-# # RAYLIB_SRCS := $(SRCS) src/raylib_renderer.cpp main.cpp
-# # RAYLIB_OUT  := pathfinder_gl
-
-# # raylib: $(RAYLIB_SRCS)
-# # 	$(CXX) $(CXXFLAGS) -o $(RAYLIB_OUT) $(RAYLIB_SRCS) -lraylib -lm
-
-
-# clean:
-# 	rm -f $(NCURSES_OUT) $(RAYLIB_OUT)
-
-# # .PHONY: ncurses raylib clean
