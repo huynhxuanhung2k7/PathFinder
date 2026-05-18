@@ -8,6 +8,7 @@ enum class TileType {
     GRASS,  //cost 3
     MUD,    //cost 5
     WATER,  //cost 8
+    WALL,   //max int 
 };
 
 int tile_cost(TileType t);
@@ -18,6 +19,7 @@ struct Node {
     TileType type = TileType::EMPTY;
     int cost = 1;
     
+    Node() = default;
     Node(int r, int c, TileType t = TileType::EMPTY);
 }; 
 
@@ -33,6 +35,10 @@ class GridGraph {
     static constexpr int WIDTH = PATHFINDER_GRID_SIZE;
     static constexpr int HEIGHT = PATHFINDER_GRID_SIZE;
 
+    private:
+    std::array<std::array<Node, WIDTH>, HEIGHT> tiles_; 
+    
+    public:
     GridGraph();        
     void clear();       // reset all tiles to EMPTY
     void clear_walls(); //remove walls
@@ -56,9 +62,6 @@ class GridGraph {
     Node*       goal();
     const Node* start() const;
     const Node* goal()  const;
-
-    private:
-    std::array<std::array<Node, WIDTH>, HEIGHT> tiles_;
 };
 
 int path_cost(const std::vector<Node*>& path);
