@@ -19,7 +19,7 @@ int tile_cost(TileType t) {
 }
 
 Node::Node(int r, int c, TileType t)
-    : row(r), col(c), type(t), cost(tile_cost(t)) {}
+    : row(r), col(c), cost(tile_cost(t)), type(t) {}
 
 
 GridGraph::GridGraph() {
@@ -81,6 +81,10 @@ std::vector<Node*> GridGraph::get_neighbors(int x, int y) {
 		if (passable(x + dx, y + dy)) 
 			out.push_back(&tiles_[y+dy][x+dx]);
 	return out;
+}
+
+std::vector<Node*> GridGraph::get_neighbors(Node* node) {
+	return get_neighbors(node->row, node->col);
 }
 
 Node*       GridGraph::start()       { return &tiles_[0][0]; }

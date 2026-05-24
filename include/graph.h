@@ -16,8 +16,8 @@ int tile_cost(TileType t);
 struct Node {
     int row = 0;
     int col = 0;
-    TileType type = TileType::EMPTY;
     int cost = 1;
+    TileType type = TileType::EMPTY;
     
     Node() = default;
     Node(int r, int c, TileType t = TileType::EMPTY);
@@ -57,6 +57,7 @@ class GridGraph {
     //Returns up to 4 passable neighbors 
     // Primary navigation for 4 algorithms
     std::vector<Node*> get_neighbors(int x, int y);
+    std::vector<Node*> get_neighbors(Node* node);
 
     Node*       start();
     Node*       goal();
