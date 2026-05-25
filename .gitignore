@@ -8,6 +8,7 @@ src/*.o
 test_stl.cpp
 test_ncurses.cpp
 test.exe
+pathfinder_tracker.html
 
 
 # OS files
