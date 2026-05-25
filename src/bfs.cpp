@@ -38,6 +38,7 @@ SearchResult BFS::find_path(GridGraph& graph, Node* start, Node* goal) {
     }
 
     result.elapsed = std::chrono::steady_clock::now() - t0;
+    result.explored_size = static_cast<int>(result.explored_order.size());
 
     if (parent.find(goal) != parent.end()) {
         for (Node* node = goal; node != nullptr; node = parent[node]) {
@@ -52,9 +53,7 @@ SearchResult BFS::find_path(GridGraph& graph, Node* start, Node* goal) {
             }
         }
     }
-
-    result.explored_size = static_cast<int>(result.explored_order.size());
-    
+   
     return result;
 }
 
