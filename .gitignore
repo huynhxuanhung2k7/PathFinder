@@ -7,7 +7,7 @@ src/*.o
 # Spike / scratch files
 test_stl.cpp
 test_ncurses.cpp
-test
+test.exe
 
 
 # OS files
