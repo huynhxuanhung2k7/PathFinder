@@ -7,6 +7,8 @@ src/*.o
 # Spike / scratch files
 test_stl.cpp
 test_ncurses.cpp
+test
+
 
 # OS files
 .DS_Store
