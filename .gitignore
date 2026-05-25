@@ -9,7 +9,8 @@ test_stl.cpp
 test_ncurses.cpp
 test.exe
 pathfinder_tracker.html
-
+myeasylog.log
+package-lock.json
 
 # OS files
 .DS_Store
