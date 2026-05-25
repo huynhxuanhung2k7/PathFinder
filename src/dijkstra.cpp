@@ -32,6 +32,7 @@ SearchResult Dijkstra::find_path(GridGraph& graph, Node* start, Node* goal) {
     std::unordered_map<Node*, int> distance;
 
     distance[start] = 0;
+    parent[start] = nullptr;
     frontier.push({start, 0});
 
     while (!frontier.empty()) {
@@ -62,7 +63,7 @@ SearchResult Dijkstra::find_path(GridGraph& graph, Node* start, Node* goal) {
     result.explored_size = static_cast<int>(result.explored_order.size());
 
     if (parent.find(goal) != parent.end()) {
-        for (Node* node = goal; node != start; node = parent[node]) {
+        for (Node* node = goal; node != nullptr; node = parent[node]) {
             result.path.push_back(node);
         }
         std::reverse(result.path.begin(), result.path.end());
