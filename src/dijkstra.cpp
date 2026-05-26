@@ -47,7 +47,7 @@ SearchResult Dijkstra::find_path(GridGraph& graph, Node* start, Node* goal) {
         if (current == goal) break;
         
         for (Node* neighbor: graph.get_neighbors(current)) {
-            if (settled.count(neighbor) > 0) continue;
+            if (settled.count(neighbor) != 0) continue;
 
             const int tentative = distance[current] + tile_cost(neighbor->type);
 
