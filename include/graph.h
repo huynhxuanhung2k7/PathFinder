@@ -1,6 +1,6 @@
 #pragma once
 
-#include <array>
+#include <array>    //for storing pure graph
 #include <vector>
 
 enum class TileType {
@@ -37,11 +37,17 @@ class GridGraph {
 
     private:
     std::array<std::array<Node, WIDTH>, HEIGHT> tiles_; 
+    int start_x_ = 0;
+    int start_y_ = 0;
+    int goal_x_ = WIDTH - 1;
+    int goal_y_ = HEIGHT - 1;
     
     public:
     GridGraph();        
     void clear();       // reset all tiles to EMPTY
     void clear_walls(); //remove walls
+    void set_start(int x, int y);
+    void set_goal(int x, int y);
 
     
     bool in_bounds(int x, int y) const; //return true if (x, y) is within grid bounds

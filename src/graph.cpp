@@ -84,13 +84,29 @@ std::vector<Node*> GridGraph::get_neighbors(int x, int y) {
 }
 
 std::vector<Node*> GridGraph::get_neighbors(Node* node) {
-	return get_neighbors(node->row, node->col);
+	// node->col is the x-coordinate, node->row is the y-coordinate.
+	// The (int x, int y) overload expects them in that order — swapping
+	// here means BFS/DFS/Dijkstra/A* all explore a transposed grid.
+	return get_neighbors(node->col, node->row);
 }
 
-Node*       GridGraph::start()       { return &tiles_[0][0]; }
-const Node* GridGraph::start() const { return &tiles_[0][0]; }
-Node*		GridGraph::goal() 		 { return &tiles_[HEIGHT-1][WIDTH-1]; }
-const Node* GridGraph::goal()  const { return &tiles_[HEIGHT-1][WIDTH-1]; }
+Node*       GridGraph::start()       { return &tiles_[start_y_][start_x_]; }
+const Node* GridGraph::start() const { return &tiles_[start_y_][start_x_]; }
+Node*		GridGraph::goal() 		 { return &tiles_[goal_y_][goal_x_]; }
+const Node* GridGraph::goal()  const { return &tiles_[goal_y_][goal_x_]; }
+
+void GridGraph::set_start(int x, int y) {
+	if (!in_bounds(x, y)) return;
+	start_x_ = x;
+	start_y_ = y;
+	set_tile(x, y, TileType::EMPTY);
+}
+
+void GridGraph::set_goal(int x, int y) {
+	goal_x_ = x;
+	goal_y_ = y;
+	set_tile(x, y, TileType::EMPTY);
+}
 
 int path_cost(const std::vector<Node*>& path) {
 	if (path.size() < 2) return 0;
