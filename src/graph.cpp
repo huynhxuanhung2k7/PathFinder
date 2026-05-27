@@ -85,8 +85,7 @@ std::vector<Node*> GridGraph::get_neighbors(int x, int y) {
 
 std::vector<Node*> GridGraph::get_neighbors(Node* node) {
 	// node->col is the x-coordinate, node->row is the y-coordinate.
-	// The (int x, int y) overload expects them in that order — swapping
-	// here means BFS/DFS/Dijkstra/A* all explore a transposed grid.
+	
 	return get_neighbors(node->col, node->row);
 }
 
