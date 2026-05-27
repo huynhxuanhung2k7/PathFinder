@@ -23,10 +23,10 @@ SearchResult BFS::find_path(GridGraph& graph, Node* start, Node* goal) {
 
     while (!frontier.empty()) {
         Node* current = frontier.front();
-        if (current == goal) break;
         frontier.pop();
         result.explored_order.push_back(current);   //render the animations for this sequence
-
+        
+        if (current == goal) break;
         
         for (Node* neighbor: graph.get_neighbors(current)) {
             if (visited.count(neighbor) == 0) {
