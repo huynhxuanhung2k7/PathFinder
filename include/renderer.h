@@ -8,6 +8,7 @@ struct AlgorithmFrame {
     std::string label;
     SearchResult result;
     int animation_step = 0;
+    int frames_held = 0;
     bool finished = false;
 };
 

@@ -4,21 +4,18 @@
 #include <ncurses.h>
 #include <algorithm>
 #include <climits>      // INT_MAX
-#include <limits>       // std::numeric_limits
+#include <limits>       // std::numeric_limits for double
 #include <csignal>      // std::signal
 #include <cstdlib>      // std::_Exit
 #include <cstdio>       // std::fprintf
 
 namespace {
-// [HD-MODERN] SIGINT handler — Ctrl-C without endwin() leaves the terminal
-// in raw mode and the user has to type `reset` blindly to recover. Demov2-style
-// guard: restore the terminal, then _Exit (signal-safe — skips destructors that
-// could deadlock during signal delivery).
+//SIGINT handler
 void handle_sigint(int) {
     endwin();
     std::_Exit(0);
 }
-}  // namespace
+}  
 
 NcursesRenderer::~NcursesRenderer() {
     shutdown();
@@ -29,8 +26,6 @@ void NcursesRenderer::init() {
 
     initscr();
 
-    // [HD-MODERN] Color support guard — fail fast on monochrome terminals
-    // instead of silently rendering everything in the default attribute.
     if (!has_colors()) {
         endwin();
         std::fprintf(stderr, "Terminal does not support colors.\n");
@@ -47,9 +42,8 @@ void NcursesRenderer::init() {
     use_default_colors();   // lets us pass -1 as a "use terminal default" bg
     init_colors();
 
-    // [HD-MODERN] Terminal-size guard — needs at least the full 2x2 panel grid
-    // plus the stats sidebar plus the status bar. Anything smaller would clip
-    // panels and look broken; better to refuse with a clear error.
+    //Terminal-size: needs at least the full 2x2 panel grid
+    // plus the stats sidebar plus the status bar. 
     const int needed_cols = STATS_X + STATS_COLS;
     const int needed_rows = 2 * PANEL_H + 1;        // +1 for status bar row
     int rows, cols;
@@ -80,7 +74,7 @@ void NcursesRenderer::shutdown() {
 void NcursesRenderer::init_colors() {
     // start_color() and use_default_colors() already called in init().
     // bg = -1 means terminal's default background
-    // The only solid block is WALL (white-on-white)
+    // The only solid block is WALL 
     init_pair(static_cast<short>(Color::WALL),     COLOR_WHITE,  COLOR_WHITE);
     init_pair(static_cast<short>(Color::EMPTY),    -1,           -1);
     init_pair(static_cast<short>(Color::GRASS),    COLOR_GREEN,  -1);
@@ -131,7 +125,7 @@ void NcursesRenderer::draw_panel(const AlgorithmFrame& f,
             if (!node || node->type == TileType::EMPTY) continue;       // defensive null guard
             const int r = grid_top + y;
             const int c = grid_left + x * CELL_W;
-            // WATER is bold (deepest blue) — differentiates from MUD which shares the '~' glyph.
+
             if (node->type == TileType::WATER) {
                 draw_cell_bold(r, c, tile_to_color(node->type), terrain_glyph(node->type));
             } else {
@@ -152,15 +146,20 @@ void NcursesRenderer::draw_panel(const AlgorithmFrame& f,
     }
 
     //layer 3 - final path
-    if (f.finished) {
-        for (const Node* node: f.result.path) {
-            if (!node) continue;                                        // defensive null guard
-            draw_cell_bold(grid_top + node->row,
-                           grid_left + node->col * CELL_W,
-                           Color::PATH,
-                           "**");
-        }
+    const int exp_size = f.result.explored_size;
+    const int path_steps_visible = f.finished
+                                 ? static_cast<int>(f.result.path.size())
+                                 : std::max(0, f.animation_step - exp_size);
+
+    for (int i = 0; i < path_steps_visible; i++) {
+        const Node* node = f.result.path[i];
+        if (!node) continue;
+        draw_cell_bold(grid_top + node->row,
+                       grid_left + node->col * CELL_W,
+                       Color::PATH,
+                       "**");
     }
+
  
     //layer 4 - start + goal markers 
     const Node* s = graph.start();
