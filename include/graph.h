@@ -46,8 +46,10 @@ class GridGraph {
     GridGraph();        
     void clear();       // reset all tiles to EMPTY
     void clear_walls(); //remove walls
+    void fill_walls();
     void set_start(int x, int y);
     void set_goal(int x, int y);
+    
 
     
     bool in_bounds(int x, int y) const; //return true if (x, y) is within grid bounds

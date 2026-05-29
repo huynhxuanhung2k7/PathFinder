@@ -1,9 +1,16 @@
 #include "runner.h"
 #include "ncurses_renderer.h"
+#include "graph.h"
+#include "maze_generator.h"
 
 #include <iostream>
 #include <exception>
 #include <memory>
+#include <string>
+#include <queue>
+#include <array>
+#include <cstdlib>
+#include <utility>
 
 
 int main() {

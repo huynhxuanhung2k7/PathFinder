@@ -4,6 +4,7 @@
 #include "dijkstra.h"
 #include "astar.h"
 
+#include <iostream>
 #include <chrono>
 #include <thread>
 #include <algorithm>
@@ -13,7 +14,7 @@ namespace {
 }
 
 AlgorithmRunner::AlgorithmRunner(std::unique_ptr<Renderer> renderer) 
-    :   renderer_(std::move(renderer)) {
+    :   renderer_(std::move(renderer)), maze_(std::random_device{}()) {
     setup_algorithms();
 }
 
@@ -24,31 +25,57 @@ void AlgorithmRunner::setup_algorithms() {
     algorithms_.push_back(std::make_unique<AStar>());
 }
 
+void AlgorithmRunner::generate_maze() {
+    maze_.generate(graph_);
+    maze_.scatter_terrain(graph_);
+    maze_.place_endpoints(graph_, 20);
+    run_all_algorithms();
+}
+
 void AlgorithmRunner::run_all_algorithms() {
+    constexpr int TIMING_RUNS = 200;
     frames_.clear();
     frames_.reserve(algorithms_.size());
     for (const auto& algo: algorithms_) {
         SearchResult r = algo->find_path(graph_, graph_.start(), graph_.goal());
+        
+        auto best = std::chrono::nanoseconds::max();
+        for (int i = 0; i < TIMING_RUNS; i++) {
+            auto t0 = std::chrono::steady_clock::now();
+            const SearchResult t = algo->find_path(graph_, graph_.start(), graph_.goal());
+            auto t1 = std::chrono::steady_clock::now();
+            best = std::min(best, std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0));
+        }
+        r.elapsed = best;
+        
         frames_.push_back({ algo->name(), std::move(r), 0, false });
     }
 }
 
 int AlgorithmRunner::run() {
     renderer_->init();
-    run_all_algorithms();
+    generate_maze();
 
     while (!renderer_->should_close()) {
         const InputAction action = renderer_->take_input();
         switch (action) {
-            case InputAction::QUIT: 
-                renderer_->shutdown();
-                return 0;
+            case InputAction::GENERATE:
+                generate_maze();
+                break;
             case InputAction::RERUN:
+                run_all_algorithms();
+                break;
+            case InputAction::CLEAR:
+                graph_.clear();
                 run_all_algorithms();
                 break;
             case InputAction::FULLSCREEN: //raylib later
             case InputAction::NONE:
                 break;
+            case InputAction::QUIT: 
+                renderer_->shutdown();
+                std::cout << "maze seed: " << maze_.seed() << "\n";
+                return 0;
         }
 
         advance_animation();

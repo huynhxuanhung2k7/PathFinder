@@ -17,7 +17,9 @@ enum class InputAction {
     NONE,       
     RERUN,      //R
     QUIT,       //Q
-    FULLSCREEN  //F - GUI only
+    FULLSCREEN,  //F - GUI only
+    GENERATE,    //G
+    CLEAR
 };
 
 //Backend abstract class

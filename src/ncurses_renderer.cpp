@@ -236,7 +236,7 @@ void NcursesRenderer::draw_stats(const std::vector<AlgorithmFrame>& frames) {
         star(y, 20, f.result.cost == best_cost);
         ++y;
  
-        mvprintw(y, STATS_X, "  ms:      %5.3f", f.result.elapsed.count());
+        mvprintw(y, STATS_X, "  ms:      %5.2f", f.result.elapsed.count());
         star(y, 20, f.result.elapsed.count() == best_ms);
         ++y;
  
@@ -275,6 +275,10 @@ InputAction NcursesRenderer::take_input() {
             return InputAction::QUIT;
         case 'r': case 'R':
             return InputAction::RERUN;
+        case 'g': case 'G':
+            return InputAction::GENERATE;
+        case 'c': case 'C':
+            return InputAction::CLEAR;
         case 'f': case 'F':
             return InputAction::FULLSCREEN;   // ncurses ignores; raylib will honor
         default:

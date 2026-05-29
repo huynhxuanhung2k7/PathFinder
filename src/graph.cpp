@@ -41,7 +41,11 @@ void GridGraph::clear_walls() {
 				node.cost = tile_cost(TileType::EMPTY);
 			}
 }
-
+void GridGraph::fill_walls() {
+    for (int y = 0; y < HEIGHT; ++y)
+        for (int x = 0; x < WIDTH; ++x)
+            set_tile(x, y, TileType::WALL);   // reuse set_tile so cost stays consistent 
+}
 bool GridGraph::in_bounds(int x, int y) const {
 	return (x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT);
 }
