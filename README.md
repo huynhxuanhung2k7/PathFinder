@@ -152,8 +152,8 @@ Three-layer separation — data, algorithm, and presentation are fully decoupled
 main.cpp
   └── AlgorithmRunner
         ├── GridGraph              single source of truth for the world
-        ├── BFS  }
-        ├── DFS  }  PathFinderBase concrete implementations
+        ├── BFS      }
+        ├── DFS      }             PathFinderBase concrete implementations
         ├── Dijkstra }
         └── AStar    }
         └── Renderer               swappable backend
