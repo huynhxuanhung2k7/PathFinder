@@ -33,7 +33,7 @@ void AlgorithmRunner::generate_maze() {
 }
 
 void AlgorithmRunner::run_all_algorithms() {
-    constexpr int TIMING_RUNS = 200;
+    constexpr int TIMING_RUNS = 300;
     frames_.clear();
     frames_.reserve(algorithms_.size());
     for (const auto& algo: algorithms_) {

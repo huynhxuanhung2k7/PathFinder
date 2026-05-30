@@ -12,6 +12,7 @@ struct AlgorithmFrame {
     bool finished = false;
 };
 
+
 //UI
 enum class InputAction {
     NONE,       
