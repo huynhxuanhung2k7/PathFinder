@@ -1,7 +1,10 @@
+#ifdef USE_RAYLIB
+    #include "raylib_renderer.h"
+#else
+    #include "ncurses_renderer.h"
+#endif
+
 #include "runner.h"
-#include "ncurses_renderer.h"
-#include "graph.h"
-#include "maze_generator.h"
 
 #include <iostream>
 #include <exception>
@@ -12,10 +15,14 @@
 #include <cstdlib>
 #include <utility>
 
-
 int main() {
     try {
-        auto renderer = std::make_unique<NcursesRenderer>();
+#ifdef USE_RAYLIB
+            auto renderer = std::make_unique<RaylibRenderer>();
+#else
+            auto renderer = std::make_unique<NcursesRenderer>();
+#endif
+
         AlgorithmRunner runner(std::move(renderer));
         return runner.run();
     } catch (const std::exception& e) {
