@@ -12,7 +12,7 @@ Two rendering backends:
 
 - Four algorithms animating simultaneously: BFS, DFS, Dijkstra, A*
 - Weighted terrain tiles — EMPTY (1), GRASS (3), MUD (5), WATER (8), WALL (impassable)
-- Seeded procedural maze generation (recursive backtracker + terrain scatter via `std::mt19937`)
+- Seeded procedural maze generation (kruskal + terrain scatter via `std::mt19937`)
 - Per-algorithm stats: visited count, path cost, elapsed time
 - Interactive controls: paint walls, regenerate maze, clear, re-run
 - Maze seeds printed on exit for reproducibility

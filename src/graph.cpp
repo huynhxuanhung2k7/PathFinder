@@ -61,7 +61,7 @@ Node* GridGraph::get_node(int x, int y) {
 
 const Node* GridGraph::get_node(int x, int y) const {
 	if (in_bounds(x, y)) return &tiles_[y][x];
-	return nullptr;
+	return nullptr;	
 }
 
 void GridGraph::set_tile(int x, int y, TileType type) {

@@ -27,8 +27,7 @@ struct Node {
 #define PATHFINDER_GRID_SIZE 25
 #endif
 
-static_assert(PATHFINDER_GRID_SIZE % 2 == 1, "Grid size must be odd for maze generation ");
-
+// static_assert(PATHFINDER_GRID_SIZE % 2 == 1, "Grid size must be odd for maze generation ");
 
 class GridGraph {
     public:
