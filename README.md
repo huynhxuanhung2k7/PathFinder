@@ -120,8 +120,6 @@ g++ -std=c++17 -Wall -Wextra -Iinclude -O2 -DUSE_RAYLIB -DPATHFINDER_GRID_SIZE=3
 
 | Key | Action |
 |---|---|
-| `WASD` / Arrow keys | Move cursor |
-| `SPACE` | Toggle wall at cursor |
 | `R` | Re-run all algorithms |
 | `G` | Generate a new seeded maze |
 | `C` | Clear grid |
